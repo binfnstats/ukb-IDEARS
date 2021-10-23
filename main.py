@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# @Author: Zhitao Xiong
+# @Author: Michael Allwright
 # @Date:   2021-09-16 12:53:33
-# @Last Modified by:   Zhitao Xiong
+# @Last Modified by:   Michael Allwright
 # @Last Modified time: 2021-09-17 08:55:19
 #%%[markdown]
 """
@@ -9,26 +9,20 @@
 Entry point for the codebase
 
 # What
-This script links all parts together to produce the insights that are needed: Expenses, Income, Assets, Liabilities
+This script links all parts together to produce the insights that are needed: 
 
 # Who
-Zhitao Xiong
+Michael Allwright
 
 # Extra
 You should run this as a notebook within Visual Studio Code
 """
 #%%
 import pandas as pd
-from multiprocessing import Process
 
-from finpass_utils.affordability_cat import extract_affordability_cat
-from finpass_utils.db_getjointaccount import get_joint_accounts
-from finpass_utils.db_gettransactions import get_transactions
-from finpass_utils.enrichment import enrich
-from finpass_utils.income import extract_income
 
 #%%
-class FinPassModel(object):
+class IDEARS_pipeline(object):
     """
     FinPass Model for generating insights: Expenses, Income, Assets, Liabilities
     """
@@ -43,7 +37,7 @@ class FinPassModel(object):
         
         print('All init DONE for enrichment files')
 
-    def predict_finpass(self, X, features_names=None) -> pd.DataFrame:
+    def check(self, X, features_names=None) -> pd.DataFrame:
         """
         Return the four numbers needed with all statitics.
 
@@ -58,7 +52,7 @@ class FinPassModel(object):
         self.df_get_transactions = get_transactions(X)
         self.df_get_jointaccount = get_joint_accounts(X)
 
-        #second, enrichment, need to pass all tables
+        
         self.df_result_enrichment = enrich(self.df_get_transactions)
 
         #third, affordability categorisation
@@ -74,7 +68,7 @@ class FinPassModel(object):
         
     def aggregate(self) -> pd.DataFrame:
         """
-        aggregate the output for FinPass by using the DFs generated in all components
+        Aggregate output
 
         Parameters
         ----------
@@ -103,5 +97,5 @@ df_test = pd.DataFrame({'uuid':pd.Series(uuids, dtype='str')})
 #%%
 df_test
 #%%
-reuslts = finpassmodel_test.predict_finpass(df_test)
+results = finpassmodel_test.predict_finpass(df_test)
 # %%

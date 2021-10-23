@@ -1,0 +1,25 @@
+# @Author: Michael Allwright
+# @Date:   2021-08-21 14:59:57
+# @Last Modified by:   Michael Allwright
+# @Last Modified time: 2021-10-17 11:11:40
+name: IDEARs-py-pipeline-env
+channels:
+  - anaconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.6
+  - pandas
+  - numpy
+  - boto3
+  - pytorch
+  - joblib
+  - pip
+  - pip:
+    - click==7.1.2
+    - sklearn
+    - uvicorn[standard]
+    - spacy==3.1.1
+    - pyarrow
+    - fastparquet
+
