@@ -19,7 +19,7 @@ import datetime as dt
 
 class data_proc(object):
 	"""
-	Incexp Model for affordability.
+	Module for feature engineering
 	"""
 
 	def __init__(self):
@@ -157,7 +157,7 @@ class data_proc(object):
 
 		df_dis_date=df_dis_date[(df_dis_date['total_bef']>self.min_part_dis)]
 
-		cols=[k for k in dis_map]
+		cols=[k for k in self.dis_map]
 		spec_conds=pd.DataFrame(df_dis_date.groupby(['eid'])[cols].sum()).reset_index()
 		dis_ohe_icd10=pd.DataFrame(df_dis_date.groupby(['eid','disease_name'])['dis_bef'].sum()\
 	.unstack('disease_name')).reset_index()
@@ -210,6 +210,58 @@ class data_proc(object):
 		df_fam_pddem.to_parquet(self.path+'df_fam_pddem.parquet')
 
 		return df_fam_pddem
+
+
+	def ukb_diseases(self):
+
+		df=pd.read_parquet('%s%s' % (self.path,'ukb_diseases_test.parquet'))
+		dis_full=pd.DataFrame([])
+
+		for i,col in enumerate(df.columns):
+		    if 'eid' not in col and 'assessment_centre' not in col:
+		        print(i)
+		        df1=df[[col,'eid','date_of_attending_assessment_centre_f53_0_0']][pd.notnull(df[col])]
+		        df1.columns=['disease_date','eid','date_assess']
+		        df1['disease_date']=pd.to_datetime(df1['disease_date']).dt.date
+		        df1['date_assess']=pd.to_datetime(df1['date_assess']).dt.date
+		        df1['disease']=str(col)
+		        dis_full=pd.concat([dis_full,df1],axis=0)
+
+		dis_full['disease']=dis_full['disease'].str.replace('date_|_first_|reported_','',regex=True)
+
+		mask_bef=(dis_full['disease_date']<dis_full['date_assess'])
+
+		mask_aft=(dis_full['disease_date']>=dis_full['date_assess']+pd.offsets.DateOffset(years=2))&\
+		(dis_full['disease_date']<=dis_full['date_assess']+pd.offsets.DateOffset(years=10))
+
+		mask_10y=(dis_full['disease_date']>dis_full['date_assess']+pd.offsets.DateOffset(years=10))
+
+		dis_full['dis_bef']=0
+		dis_full['dis_bef'][mask_bef]=1
+
+		dis_full['dis_aft']=0
+		dis_full['dis_aft'][mask_aft]=1
+
+		dis_full['dis_exc']=0
+		dis_full['dis_exc'][mask_10y|mask_bef]=1
+
+		dis_full['total_bef']=dis_full.groupby('disease')['dis_bef'].transform('sum')
+		dis_full['total_aft']=dis_full.groupby('disease')['dis_aft'].transform('sum')
+
+		dis_ohe=pd.DataFrame(dis_full.groupby(['eid','disease'])['dis_bef'].sum().unstack('disease')).reset_index()
+
+		"""
+		bring null records back
+		"""
+
+		dis_ohe=pd.merge(df['eid'],dis_ohe,how='left',on='eid')
+		dis_ohe.fillna(0,inplace=True)
+
+		dis_ohe['total_dis']=dis_ohe[[col for col in dis_ohe.columns if 'eid' not in col]].sum(axis=1)
+
+		dis_ohe=pd.read_parquet(path+'dis_ohe.parquet')
+
+		return dis_ohe
 
 
 
