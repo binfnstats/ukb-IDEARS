@@ -32,14 +32,12 @@ class IDEARs_funcs(object):
     """
     Class of functions to run XGBoost and SHAP on UKBiobank Data as part of the IDEARS pipeline
     """
-
-
     
     def __init__(self):
         """
         Initilising models.
         """
-        self.path="../../Data/"
+        self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
 
         self.config = dict(scale_pos_weight = 6,subsample = 1, min_child_weight = 5, max_depth = 5, gamma= 2, 
                   colsample_bytree= 0.6,smote=1,reps=2)

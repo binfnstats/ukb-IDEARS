@@ -24,7 +24,7 @@ class dataload(object):
 		"""
 		Initilising models.
 		"""
-		self.path="../../../../../michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data"
+		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
 		self.fullfile='ukb_tp0_new.parquet'
 		self.exclusions=excs='source_of_report|first_reported|icd10|icd9|operative_procedures|treatment_speciality|external_ca|patient_recoded|\
 	hospital_polymorphic|_report|assay_date|device_id'
@@ -67,9 +67,7 @@ class dataload(object):
 
 	def output_treats(self,load=0):
 		treatcols=self.treatcols()
-		print(treatcols)
-		
-		df=pd.read_csv(self.path+'all_092021.csv',usecols=list(treatcols+['eid']))
+		df=pd.read_csv(self.path+'all_092021.csv',usecols=list(treatcols+['eid']),engine='python')
 		df['eid']=df['eid'].astype(str)
 		df.to_parquet(self.path+'ukb_treatments.parquet')
 		return df
