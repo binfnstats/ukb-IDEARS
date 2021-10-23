@@ -9,7 +9,8 @@
 
 This is the codebase for IDEARs - Integrated Disease Explanation and Associations Risk Scoring. Its overall architecture is shown below.
 
-![](UKB ML flow-Page-2.drawio.png)
+![]("UKB ML flow-Page-2.drawio.png")
+
 
 ## How to Run
 To ease the configuation, please install Anaconda and then use the conda-env.yml to create the required virutal environment. 
