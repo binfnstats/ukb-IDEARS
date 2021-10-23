@@ -9,7 +9,6 @@
 
 This is the codebase for IDEARs - Integrated Disease Explanation and Associations Risk Scoring. Its overall architecture is shown below.
 
-![]("UKB ML flow-Page-2.drawio.png")
 
 <img src="UKB ML flow-Page-2.drawio.png"
      alt="Markdown Monster icon"
@@ -17,7 +16,7 @@ This is the codebase for IDEARs - Integrated Disease Explanation and Association
 
 
 ## How to Run
-To ease the configuation, please install Anaconda and then use the conda-env.yml to create the required virutal environment. 
+To ease the configuation, please install Anaconda and set this up in a virtual environment. 
 
 1. Install Anaconda:
 
@@ -41,7 +40,7 @@ Import modules etc.
 
 ### Directory Tree and Explanations
 
-This folder has the implementation of this PoC. Due to the model and data access in PoC phase, the model used in the **hasmerch** endpoint uses a pre-defined hunggingface model as an example. It can be replaced to the model we are using easily once the model of interest is identified. 
+This folder shows the implementation of the IDEARs platform.
 
 ```
 📦ukb_IDEARS-pipeline-poc
@@ -49,46 +48,27 @@ This folder has the implementation of this PoC. Due to the model and data access
  ┃ ┣ 📂core
  ┃ ┃ ┣ 📂logic
  ┃ ┃ ┃ ┣ 📂data processing        
- ┃ ┃ ┃ ┗ 📜ml
-
+ ┃ ┃ ┃ ┃  ┣  📜data_import.py
+ ┃ ┃ ┃ ┃  ┣  📜data_import.py  
+ ┃ ┃ ┃ ┗ 📂ml      
  ┃ ┃ ┣ 📂models
  ┃ ┃ ┃ ┣ 📜bulkresponse.py
  ┃ ┃ ┃ ┣ 📜requests.py
  ┃ ┃ ┃ ┗ 📜response.py
  ┃ ┃ ┗ 📜config.py
  ┃ ┣ 
- ┣ 📜autoscale.yaml
- ┣ 📜conda-env.yml
- ┣ 📜Dockerfile
- ┣ 📜locustfile.py
+ ┣ 📜config.yaml
+ ┣ 📜requirements.txt
  ┣ 📜main.py
  ┣ 📜README.md
- ┣ 📜PoC for Python Services Full.pdf
- ┣ 📜requirements.txt
- ┣ 📜startlocal_woDocker.bat
- ┗ 📜startlocal_woDocker.sh
+ ┣
 ```
 
-### Root Folder
-Some noticeable files are the following:
-- conda-env.yml: conda environment definition for local use;
-
-### Service Folder
-By seperating api and core logic, this folder defines the actual endpoints as well as some core business logic. It also defines inputs and outputs. 
-
-Some noticeable files are the following:
-
-- core/logic/hasmerch.py: some essential business logic for preparing the data for further processing, such as sentence encoding and judgement about whether 
-### Remarks on Data Required to Run
-
-## Some Statistics
-
-### ![](statistics.png)
 
 ## The Roadmap
 
 
-## Get Help
+## Enquiries
 
 Michael Allwright - michael@allwrightanalytics.com
 
