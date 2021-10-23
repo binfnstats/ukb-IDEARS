@@ -7,6 +7,7 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 

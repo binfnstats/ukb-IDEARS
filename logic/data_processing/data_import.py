@@ -25,6 +25,7 @@ class dataload(object):
 		Initilising models.
 		"""
 		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
+		self.inpfile='all_092021.csv'
 		self.fullfile='ukb_tp0_new.parquet'
 		self.exclusions=excs='source_of_report|first_reported|icd10|icd9|operative_procedures|treatment_speciality|external_ca|patient_recoded|\
 	hospital_polymorphic|_report|assay_date|device_id'
@@ -54,6 +55,17 @@ class dataload(object):
 		treatcols=self.findcols(df,'treatmentmedication_code')
 		return treatcols
 
+	def ICD10_out(self):
+		df=self.read_all_samp()
+		ICD10cols=[col for col in df.columns if '41270' in col or '41280' in col or 'eid' in col]
+		icdextcols=['age_when_attended_assessment_centre_f21003_0_0','date_of_attending_assessment_centre_f53_0_0',\
+	'date_of_death_f40000_0_0']
+		ICD10cols=ICD10cols+icdextcols
+		df=pd.read_csv('%s%s' % (self.path,self.inpfile),usecols=ICD10cols)
+		df.to_parquet('%s%s' % (self.path,'ICD10s_test.parquet'))
+		return df
+
+
 	def famhist(self,df):
 		cols_famhist=['eid']+findcols(df,'illnesses_of_father')+findcols(df,'illnesses_of_mother')
 		df_fam_hist=pd.read_csv(self.path+'all_092021.csv',usecols=cols_famhist)
@@ -67,9 +79,9 @@ class dataload(object):
 
 	def output_treats(self,load=0):
 		treatcols=self.treatcols()
-		df=pd.read_csv(self.path+'all_092021.csv',usecols=list(treatcols+['eid']),engine='python')
+		df=pd.read_csv(self.path+self.inpfile,usecols=list(treatcols+['eid']))
 		df['eid']=df['eid'].astype(str)
-		df.to_parquet(self.path+'ukb_treatments.parquet')
+		df.to_parquet(self.path+'ukb_treatments_test.parquet')
 		return df
 
 	def disease_cols(self,df):
