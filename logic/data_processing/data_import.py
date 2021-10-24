@@ -34,6 +34,13 @@ class dataload():
 		self.exclusions='source_of_report|first_reported|icd10|icd9|operative_procedures|treatment_speciality|external_ca|patient_recoded|\
 	hospital_polymorphic|_report|assay_date|device_id'
 
+		self.PDcols=['eid','worked_with_pesticides_f22614_0_0','home_area_population_density_urban_or_rural_f20118_0_0',
+       'single_episode_of_probable_major_depression_f20123_0_0','probable_recurrent_major_depression_moderate_f20124_0_0',
+		'probable_recurrent_major_depression_severe_f20125_0_0','bipolar_and_major_depression_status_f20126_0_0',
+		'neuroticism_score_f20127_0_0' ,'recent_feelings_or_nervousness_or_anxiety_f20506_0_0',
+		'daytime_dozing_sleeping_narcolepsy_f1220_0_0']
+
+
 
 
 	def findcols(self,df,string):
@@ -70,19 +77,34 @@ class dataload():
 		df.to_parquet('%s%s' % (self.path,'ICD10s_test.parquet'))
 		return df
 
+	def PD_specific_out(self):
+		"""
+		Get specific variables required for PD based on meta-analyses
+		"""
+		df=pd.read_csv('%s%s' % (self.path,self.inpfile),usecols=self.PDcols)
+		df['eid']=df['eid'].astype(str)
+		df.to_parquet('%s%s' % (self.path,'PD_specific.parquet'))
+		return df
+
 
 	def famhist(self,df):
 		cols_famhist=['eid']+self.findcols(df,'illnesses_of_father')+self.findcols(df,'illnesses_of_mother')
 		df_fam_hist=pd.read_csv(self.path+'all_092021.csv',usecols=cols_famhist)
 		df_fam_hist['eid']=df_fam_hist['eid'].astype(str)
-		df_fam_hist.to_parquet(self.path+'df_fam_hist.parquet')
+		df_fam_hist.to_parquet(self.path+'df_fam_hist_test.parquet')
 		return df_fam_hist
+
+	def deaths_df(self):
+		deaths=pd.read_parquet(self.path+self.fullfile,columns=['eid','date_of_death_f40000_0_0'])
+		deaths.to_parquet(self.path+'deaths_test.parquet')
+		return deaths
+
 
 	def loadfullfile(self):
 		df=pd.read_parquet(self.path+self.fullfile)
 		return df
 
-	def output_treats(self,load=0):
+	def df_treats(self,load=0):
 		treatcols=self.treatcols()
 		df=pd.read_csv(self.path+self.inpfile,usecols=list(treatcols+['eid']))
 		df['eid']=df['eid'].astype(str)
@@ -120,6 +142,9 @@ class dataload():
 		df=df[cols]
 		df.to_parquet(self.path+file)
 		return df
+
+		
+
 
 
 

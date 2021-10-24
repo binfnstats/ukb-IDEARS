@@ -183,7 +183,7 @@ class IDEARs_funcs(object):
         
     def simpletrain(self,df,model,dropcols,depvar,wordsremove,resizeratio=20,shapshow=1):
         
-        df_out=preprocess(df,dropcols,depvar,wordsremove,resizeratio)
+        df_out=self.preprocess(df,dropcols,depvar,wordsremove,resizeratio)
         
         X=df_out.drop(columns=['eid',depvar])
         y=df_out[depvar]
@@ -203,7 +203,7 @@ class IDEARs_funcs(object):
 
     def simple_eval(self,df,model,dropcols,depvar,wordsremove,resize,resizeratio):
         
-        df_out=preprocess(df,dropcols,depvar,wordsremove,resize,resizeratio)
+        df_out=self.preprocess(df,dropcols,depvar,wordsremove,resize,resizeratio)
         
         X=df_out.drop(columns=['eid',depvar])
         y=df_out[depvar]
@@ -235,7 +235,7 @@ class IDEARs_funcs(object):
         
         return outputs
 
-    def runmodel(self,df,dropcols,reps,splits,model,depvar='Dementia',tree=1,plot_type='dot',featsfit=30,LRcheck=0,
+    def runmodel(self,df,dropcols,reps,splits,model,depvar='dementia',tree=1,plot_type='dot',featsfit=30,LRcheck=0,
                 verbose=0,resize=1,resizeratio=20):
         
         if len(dropcols)>0:
@@ -312,8 +312,6 @@ class IDEARs_funcs(object):
                         print("SHAP for all variables")
                         shap.summary_plot(shap_values, X_test,max_display=20,plot_type=plot_type)
                     
-                    
-                    
                     shap_sign_sum=shap_values.mean(axis=0)
         
                     shap_sum = np.abs(shap_values).mean(axis=0)
@@ -321,7 +319,7 @@ class IDEARs_funcs(object):
                     importances = pd.DataFrame(data={'Attribute': X_train.columns,
                     'Importance': mod.feature_importances_})
                     importances = importances.sort_values(by='Importance', ascending=False)
-                    importances['iteration']=k
+                    
                     
                     #xgboost built in top features
                     topcols=[col for col in X_train.columns if col in importances['Attribute'].head(featsfit).values]
@@ -356,7 +354,7 @@ class IDEARs_funcs(object):
                     importance_df['shap_importance']=pd.to_numeric(importance_df['shap_importance'])
                     importance_df['shap_sign_importance']=pd.to_numeric(importance_df['shap_sign_importance'])
                     importance_df = importance_df.sort_values('shap_importance', ascending=False)
-                    importance_df['iteration']=k
+                    
                     importance_df['rank']=np.arange(len(importance_df))
                     #list_shap_values.append(shap_values)
                     #list_test_sets.append(test_index)
