@@ -14,20 +14,26 @@ from typing import Any, List
 import pandas as pd
 import numpy as np
 import re
+import yaml
 
-class dataload(object):
+class dataload():
+	import yaml
 	"""
 	Incexp Model for affordability.
 	"""
 
-	def __init__(self):
+	def __init__(self,yam=yaml.YAMLObject):
 		"""
 		Initilising models.
 		"""
+		
+		#self.config=read_yaml(yam)
 		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
+		self.inpfile='all_092021.csv'
 		self.fullfile='ukb_tp0_new.parquet'
-		self.exclusions=excs='source_of_report|first_reported|icd10|icd9|operative_procedures|treatment_speciality|external_ca|patient_recoded|\
+		self.exclusions='source_of_report|first_reported|icd10|icd9|operative_procedures|treatment_speciality|external_ca|patient_recoded|\
 	hospital_polymorphic|_report|assay_date|device_id'
+
 
 
 	def findcols(self,df,string):
@@ -54,6 +60,17 @@ class dataload(object):
 		treatcols=self.findcols(df,'treatmentmedication_code')
 		return treatcols
 
+	def ICD10_out(self):
+		df=self.read_all_samp()
+		ICD10cols=[col for col in df.columns if '41270' in col or '41280' in col or 'eid' in col]
+		icdextcols=['age_when_attended_assessment_centre_f21003_0_0','date_of_attending_assessment_centre_f53_0_0',\
+	'date_of_death_f40000_0_0']
+		ICD10cols=ICD10cols+icdextcols
+		df=pd.read_csv('%s%s' % (self.path,self.inpfile),usecols=ICD10cols)
+		df.to_parquet('%s%s' % (self.path,'ICD10s_test.parquet'))
+		return df
+
+
 	def famhist(self,df):
 		cols_famhist=['eid']+findcols(df,'illnesses_of_father')+findcols(df,'illnesses_of_mother')
 		df_fam_hist=pd.read_csv(self.path+'all_092021.csv',usecols=cols_famhist)
@@ -67,9 +84,9 @@ class dataload(object):
 
 	def output_treats(self,load=0):
 		treatcols=self.treatcols()
-		df=pd.read_csv(self.path+'all_092021.csv',usecols=list(treatcols+['eid']),engine='python')
+		df=pd.read_csv(self.path+self.inpfile,usecols=list(treatcols+['eid']))
 		df['eid']=df['eid'].astype(str)
-		df.to_parquet(self.path+'ukb_treatments.parquet')
+		df.to_parquet(self.path+'ukb_treatments_test.parquet')
 		return df
 
 	def disease_cols(self,df):
@@ -83,7 +100,7 @@ class dataload(object):
 	def non_missing_cols(self,df,ratio=0.8):
 		for col in df.columns:
 			df[col][(df[col]=='nan')]=np.NaN
-			cols_rat=[col for col in df.columns if df[col].count()/df.shape[0]>ratio and not re.search(excs,col)]
+			cols_rat=[col for col in df.columns if df[col].count()/df.shape[0]>ratio and not re.search(self.excs,col)]
 			cols_rat_df=pd.DataFrame(cols_rat)
 			cols_rat_df.columns=['colname']
 

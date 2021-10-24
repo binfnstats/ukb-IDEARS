@@ -1,0 +1,22 @@
+# @Author: Michael Allwright
+# @Date:   2021-08-21 14:59:57
+# @Last Modified by:   Michael Allwright
+# @Last Modified time: 2021-10-17 11:11:40
+name: UKB-IDEARS-pipeline
+
+disease:
+  disease: PD
+  years_bef: 2
+  years_aft: 10
+  age_begin: 50
+  age_end: 70
+
+runsteps:
+  data_imp: 1
+  dis_data: 1
+  shap: 1
+
+ratios:
+  rat_missing: 0.8
+
+

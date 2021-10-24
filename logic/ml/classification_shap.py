@@ -7,6 +7,7 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 
@@ -38,6 +39,8 @@ class IDEARs_funcs(object):
         Initilising models.
         """
         self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
+        self.path_figures= "/Users/michaelallwright/Documents/GitHub/ukb-dementia-shap/figures/"
+
 
         self.config = dict(scale_pos_weight = 6,subsample = 1, min_child_weight = 5, max_depth = 5, gamma= 2, 
                   colsample_bytree= 0.6,smote=1,reps=2)
@@ -490,6 +493,38 @@ class IDEARs_funcs(object):
         ax = k2.plot.barh(x='Variable',y='SHAP_abs',color = colorlist,legend=False,figsize=(figx, figy))
         ax.set_xlabel("SHAP Value (Red = Positive Impact)")
         return k2
+
+    def plot_ROCAUC_mult(self,y_test,y_score,labels,cols ,figname='check',figx=6,figy=4):
+
+        """
+        Plot multiple ROCAUC graphs next to each other and output as an svg figure
+        """
+    
+        figure(figsize=(figx, figy), dpi=200)
+        
+        d = dict()
+        aucs=[]
+        for i,x in enumerate(y_test):
+            fpr, tpr, _ = roc_curve(y_test[i],y_score[i])
+            mean_auc=auc(fpr, tpr)
+            d["fpr{0}".format(i)] = fpr
+            d["tpr{0}".format(i)] = tpr
+            d["meanauc{0}".format(i)]= mean_auc
+            plt.plot(fpr, tpr, cols[i], alpha = 0.8,label=r'%s (AUC = %0.2f)' % (labels[i],mean_auc))
+            aucs.append(mean_auc)
+            
+        plt.xlim([-0.01, 1.01])
+        plt.ylim([-0.01, 1.01])
+        plt.ylabel('True Positive Rate', fontsize=14)
+        plt.xlabel('False Positive Rate', fontsize=14)
+        plt.legend(loc="lower right", fontsize=10)
+        plt.xticks(fontsize='18')
+        plt.yticks(fontsize='18')
+        
+        plt.savefig(self.path_figures+figname+'.svg', dpi=300)
+        plt.show()
+            
+        return aucs
 
     def agenorm2(self,df,var):
 
