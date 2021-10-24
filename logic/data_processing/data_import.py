@@ -14,21 +14,26 @@ from typing import Any, List
 import pandas as pd
 import numpy as np
 import re
+import yaml
 
-class dataload(object):
+class dataload():
+	import yaml
 	"""
 	Incexp Model for affordability.
 	"""
 
-	def __init__(self):
+	def __init__(self,yam=yaml.YAMLObject):
 		"""
 		Initilising models.
 		"""
+		
+		#self.config=read_yaml(yam)
 		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
 		self.inpfile='all_092021.csv'
 		self.fullfile='ukb_tp0_new.parquet'
-		self.exclusions=excs='source_of_report|first_reported|icd10|icd9|operative_procedures|treatment_speciality|external_ca|patient_recoded|\
+		self.exclusions='source_of_report|first_reported|icd10|icd9|operative_procedures|treatment_speciality|external_ca|patient_recoded|\
 	hospital_polymorphic|_report|assay_date|device_id'
+
 
 
 	def findcols(self,df,string):
@@ -95,7 +100,7 @@ class dataload(object):
 	def non_missing_cols(self,df,ratio=0.8):
 		for col in df.columns:
 			df[col][(df[col]=='nan')]=np.NaN
-			cols_rat=[col for col in df.columns if df[col].count()/df.shape[0]>ratio and not re.search(excs,col)]
+			cols_rat=[col for col in df.columns if df[col].count()/df.shape[0]>ratio and not re.search(self.excs,col)]
 			cols_rat_df=pd.DataFrame(cols_rat)
 			cols_rat_df.columns=['colname']
 
