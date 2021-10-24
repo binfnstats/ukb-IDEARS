@@ -51,8 +51,8 @@ class dataload():
 			df[col][mask]=np.NaN
 		return df
 
-	def read_all_samp(self,file='all_092021.csv'):
-		df=pd.read_csv(self.path+file,nrows=100)
+	def read_all_samp(self):
+		df=pd.read_csv(self.path+self.inpfile,nrows=100)
 		return df
 
 	def treatcols(self):
@@ -72,10 +72,10 @@ class dataload():
 
 
 	def famhist(self,df):
-		cols_famhist=['eid']+findcols(df,'illnesses_of_father')+findcols(df,'illnesses_of_mother')
+		cols_famhist=['eid']+self.findcols(df,'illnesses_of_father')+self.findcols(df,'illnesses_of_mother')
 		df_fam_hist=pd.read_csv(self.path+'all_092021.csv',usecols=cols_famhist)
 		df_fam_hist['eid']=df_fam_hist['eid'].astype(str)
-		df_fam_hist.to_parquet(path+'df_fam_hist.parquet')
+		df_fam_hist.to_parquet(self.path+'df_fam_hist.parquet')
 		return df_fam_hist
 
 	def loadfullfile(self):
@@ -92,6 +92,16 @@ class dataload():
 	def disease_cols(self,df):
 		disease_cols=self.findcols(df,'first_reported')+['eid']+['date_of_attending_assessment_centre_f53_0_0']
 		return disease_cols
+
+	def import_ukb_disease(self):
+		df=self.read_all_samp()
+		diseasecols=self.disease_cols(df)
+		df=pd.read_csv(self.path+self.inpfile,usecols=list(diseasecols+['eid']))
+		df['eid']=df['eid'].astype(str)
+		df.to_parquet(self.path+'ukb_diseases_test.parquet')
+
+		return df
+
 
 	def death_eids(self,df):
 		death_eids=self.nonnull_eids(df,'date_of_death_f40000_0_0')[0]

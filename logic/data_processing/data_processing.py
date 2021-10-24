@@ -27,55 +27,78 @@ class data_proc_main(object):
 		"""
 		Initilising models.
 		"""
+
+		self.year=2021 #latest data's year, month, day
+		self.month=1
+		self.day=31
+
+		self.years_wait=2 #years to ignore diagnoses post baseline
+		self.years_max=10 #max years to model from
+		self.min_part_dis=200 #min number of patients with disease x before included
+
 		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
 		self.fullfile='ukb_tp0_new.parquet'
 		self.cols_nonmiss_file='cols80.csv'
+		self.icd10_file='ukb_ICD10.parquet'
 
-
+		#special diseases to model which are combs of ICD10s
 		self.dis_map={'cerebrovasc':['I60','I62','I63','I65','I66','I67','I68','I69'],
 		 'stroke':['I64'],'TBI':['S0'],'Hear_loss':['H919','H901','H902','H903','H904',\
 	'H905','H906','H907','H908','H909','H910','H911','H912','Z974']}
 
+		#disease words for labels
+		self.diseases_words_monitor='dementia|alzheim|parkin|hunting|diabetes'
+
+		#columns to include for merges - key columns for analyses selections
 		self.keycols=['eid','date_of_attending_assessment_centre_f53_0_0','age_when_attended_assessment_centre_f21003_0_0']
 
+		#words to convert to nulls
 		self.excwords=['Prefer not to answer','nan','None of the above']
+
+		#words to exclude columns with these included
 		self.excs='source_of_report|first_reported|icd10|icd9|operative_procedures|treatment_speciality|\
 	external_ca|patient_recoded|hospital_polymorphic|_report|assay_date|device_id'
 
+		#extra words to exclude in cts vars
 		self.excs_cts='aliquot|assessment_centre|acquisition_time|main_speciality|date_of_|patient_classi|\
 	methods_of_discharge|inpatient_record_format|weight_method|_missing_reason|eid'
 
+		# these variables override the ohe requirements
+		self.ohe_exceps=['current_employment_status_f6142_0_0','qualifications_f6138_0_0']
 
+		"""
+		#special columns to modify
 		self.speccols=['sex_f31','average_total_household_income_before_tax_f738','usual_walking_pace_f924',
  		'frequency_of_friendfamily_visits_f1031','drive_faster_than_motorway_speed_limit_f1100',
 		'weekly_usage_of_mobile_phone_in_last_3_months_f1120','qualifications_f6138',
 		'gender','avgincome','walkspeed','freqfriendfamily','faster_mot_speed','weekly_mobphone_mins',
 		'qualif_score','APOE4_Carriers']
-		self.icd10_file='ukb_ICD10.parquet'
-		self.year=2021
-		self.month=1
-		self.day=31
+		"""
 
-		self.years_wait=2
-		self.years_max=10
-		self.min_part_dis=200
-
-
-
-	
 	def convert_null(self,df):
+
+		"""
+		helper function to convert certain values to nulls
+		"""
 		for col in df.columns:
 			mask=(df[col]=='Prefer not to answer')|(df[col]=='nan')
 			df[col][mask]=np.NaN
 		return df
 
 	def findcols(self,df,string):
+
+		"""
+		helper function to find columns based on string 
+		"""
+
 		return [col for col in df if string in col]
 
 	def returndesc(self,string):
+
 		'''
-		functions to apply the icd10 mapping and return disease and disease block
+		functions to apply the icd10 mapping and return disease
 		'''
+
 		code=icd10.find(str(string))
 		if code:
 			desc=code.description
@@ -84,6 +107,10 @@ class data_proc_main(object):
 		return desc
 
 	def returndescblock(self,string):
+
+		'''
+		function to apply the icd10 mapping and return disease block
+		'''
 		
 		try:
 			code=icd10.find(str(string))
@@ -99,16 +126,16 @@ class data_proc_main(object):
 
 		df=pd.read_parquet('%s%s' % (self.path,self.icd10_file))
 
-		"""
-		format dates and work out age today
-		"""
+		
+		#format dates and work out age today
+		
 		df['date_of_attending_assessment_centre_f53_0_0']=pd.to_datetime(df['date_of_attending_assessment_centre_f53_0_0'])
 		df['Age_Today']=df['age_when_attended_assessment_centre_f21003_0_0']+(dt.datetime(self.year, self.month, self.day)-\
 		df['date_of_attending_assessment_centre_f53_0_0']).dt.days/365.25
 
-		"""
-		ICD10 columns for extraction and split of dates and diseases data
-		"""
+	
+		#ICD10 columns for extraction and split of dates and diseases data
+
 
 		cols1=[col for col in df.columns if '41270' in col or 'eid' in col]
 		cols2=[col for col in df.columns if '41280' in col or 'eid' in col]
@@ -116,9 +143,9 @@ class data_proc_main(object):
 		df_dis=df[cols1]
 		df_date=df[cols2]
 
-		"""
-		make so 1 record per individual per ICD10
-		"""
+
+		#make so 1 record per individual per ICD10
+
 		df_dis = pd.melt(df_dis, id_vars='eid', value_name='VALUE')
 		df_dis=df_dis[pd.notnull(df_dis['VALUE'])]
 
@@ -153,6 +180,8 @@ class data_proc_main(object):
 		df_dis_date.rename(columns={'date_of_attending_assessment_centre_f53_0_0':'date_assess','dis_date':'disease_date'}\
 	,inplace=True)
 
+		#create dummie variables for diseases if before assessment centre (dis_bef) for indep vars and if after 2 years/
+		#before 10 years (mask_aft) for dep variable
 		mask_bef=(df_dis_date['disease_date']<df_dis_date['date_assess'])
 
 		mask_aft=(df_dis_date['disease_date']>=df_dis_date['date_assess']+pd.offsets.DateOffset(years=self.years_wait))&\
@@ -169,45 +198,56 @@ class data_proc_main(object):
 		df_dis_date['dis_exc']=0
 		df_dis_date['dis_exc'][mask_10y|mask_bef]=1
 
+		#total participants for each ICD10
 		df_dis_date['total_bef']=df_dis_date.groupby('disease')['dis_bef'].transform('sum')
 		df_dis_date['total_aft']=df_dis_date.groupby('disease')['dis_aft'].transform('sum')
 
-		"""
-		mapping of certain diseases by their codes in dis_map above
-		"""
-
+	
+		#mapping of certain diseases by their codes in dis_map above
 		for var in self.dis_map:
 			df_dis_date[var]=0
 			mask=(df_dis_date['disease'].str.contains('|'.join(self.dis_map[var])))
 			df_dis_date[var][mask]=df_dis_date['dis_bef']
 
+		#filter only for minimum participants
 		df_dis_date=df_dis_date[(df_dis_date['total_bef']>self.min_part_dis)]
 
+		#use disease map dictionary to create df of specific focus diseases
 		cols=[k for k in self.dis_map]
 		spec_conds=pd.DataFrame(df_dis_date.groupby(['eid'])[cols].sum()).reset_index()
+
+		#simple step but one hot encodes all diseases based on the dis_bef criteria
 		dis_ohe_icd10=pd.DataFrame(df_dis_date.groupby(['eid','disease_name'])['dis_bef'].sum()\
 	.unstack('disease_name')).reset_index()
 
+		#compute total number of conditions
 		totaldis=pd.DataFrame(df_dis_date.groupby('eid')['dis_bef'].sum()).reset_index()
 		totaldis.columns=['eid','total_dis']
 
+		#compute total number of conditions within each disease block
 		disblock=pd.DataFrame(df_dis_date.groupby(['eid','disease_block'])['dis_bef'].max().\
 	unstack('disease_block')).reset_index()
 		disblock.fillna(0,inplace=True)
 
+		#merge all files together
 		dis_ohe_icd10=pd.merge(dis_ohe_icd10,spec_conds,on='eid',how='outer')
 		dis_ohe_icd10=pd.merge(df['eid'],dis_ohe_icd10,how='left',on='eid')
 		dis_ohe_icd10=pd.merge(dis_ohe_icd10,disblock,how='left',on='eid')
 		dis_ohe_icd10=pd.merge(dis_ohe_icd10,totaldis,how='left',on='eid')
 		dis_ohe_icd10.fillna(0,inplace=True)
 
+		#output files
 		df_dis_date.to_parquet(self.path+'df_dis_date_test.parquet')
 		dis_ohe_icd10.to_parquet(self.path+'dis_ohe_icd10_test.parquet')
 
 
-		return df_dis_date
+		return df_dis_date,dis_ohe_icd10
 
 	def famhistory(self):
+
+		"""
+		converts the family history file to a file with columns for PD and dementia
+		"""
 		df=pd.read_parquet(self.path+'df_fam_hist.parquet')
 		df = pd.melt(df, id_vars='eid', value_name='VALUE')
 		df['father_parkinson']=0
@@ -239,6 +279,11 @@ class data_proc_main(object):
 
 
 	def ukb_diseases(self):
+
+		"""
+		this one hot encodes diseases and separates these but based on the UKB file's raw attempt at this as 
+		opposed to the ICD10 attempt above. It also outputs our labels datasets
+		"""
 
 		df=pd.read_parquet('%s%s' % (self.path,'ukb_diseases_test.parquet'))
 		dis_full=pd.DataFrame([])
@@ -274,22 +319,61 @@ class data_proc_main(object):
 		dis_full['total_bef']=dis_full.groupby('disease')['dis_bef'].transform('sum')
 		dis_full['total_aft']=dis_full.groupby('disease')['dis_aft'].transform('sum')
 
-		dis_ohe=pd.DataFrame(dis_full.groupby(['eid','disease'])['dis_bef'].sum().unstack('disease')).reset_index()
+		#creation of independent variables for disease before assessment centre
+		dis_ohe_ukb=pd.DataFrame(dis_full.groupby(['eid','disease'])['dis_bef'].sum().unstack('disease')).reset_index()
+		dis_ohe_ukb=pd.merge(df['eid'],dis_ohe_ukb,how='left',on='eid')
+		dis_ohe_ukb.fillna(0,inplace=True)
+		dis_ohe_ukb['total_dis']=dis_ohe_ukb[[col for col in dis_ohe_ukb.columns if 'eid' not in col]].sum(axis=1)
 
-		"""
-		bring null records back
-		"""
+		#create labels data for key diseases to focus on
+		mask_dis=(dis_full['disease'].str.contains(self.diseases_words_monitor,regex=True))
 
-		dis_ohe=pd.merge(df['eid'],dis_ohe,how='left',on='eid')
-		dis_ohe.fillna(0,inplace=True)
+		labels=pd.DataFrame(dis_full[mask_dis].groupby(['eid','disease'])['dis_aft'].sum()\
+	.unstack('disease')).reset_index()
+		labels.columns=['eid']+[col+'_label' for col in labels.columns if col!='eid']
+		labels=pd.merge(df['eid'],labels,how='left',on='eid')
+		labels.fillna(0,inplace=True)
 
-		dis_ohe['total_dis']=dis_ohe[[col for col in dis_ohe.columns if 'eid' not in col]].sum(axis=1)
+		label_dates=pd.DataFrame(dis_full[mask_dis].groupby(['eid','disease'])['disease_date'].\
+	min().unstack('disease')).reset_index()
+		label_dates.columns=['eid']+[col+'_date' for col in label_dates.columns if col!='eid']
 
-		dis_ohe=pd.read_parquet(path+'dis_ohe.parquet')
+		for col in label_dates.columns:
+			if col!='eid':
+				label_dates[col]=pd.to_datetime(label_dates[col])
+		label_dates=pd.merge(df['eid'],label_dates,how='left',on='eid')  
 
-		return dis_ohe
+		for col in label_dates.columns:
+			if col!='eid':
+				label_dates[col][pd.isnull(label_dates[col])]='2030-01-01'
+				label_dates[col]=pd.to_datetime(label_dates[col])
+
+		label_dates['dementia_date']=label_dates[[col for col in label_dates.columns if 'dementia' in col]].min(axis=1)
+		label_dates['dementia_date'][(label_dates['dementia_date']=='2030-01-01')]=np.nan    
+		label_dates['parkins_date']=label_dates[[col for col in label_dates.columns if 'g20parkinsons_disease' in col]].min(axis=1)
+		label_dates['parkins_date'][(label_dates['parkins_date']=='2030-01-01')]=np.nan  
+		pd_dementia_dates=label_dates[['eid','parkins_date','dementia_date']]
+		
+
+		excludes=pd.DataFrame(dis_full[mask_dis].groupby(['eid','disease'])['dis_exc']\
+	.sum().unstack('disease')).reset_index()
+		excludes=pd.merge(df['eid'],excludes,how='left',on='eid')
+		excludes.fillna(0,inplace=True)
+		excludes.columns=['eid']+[col+'_exc' for col in labels.columns if col!='eid']
+
+		#export all parquet files for use
+		dis_ohe_ukb.to_parquet(self.path+'dis_ohe_test.parquet')
+		labels.to_parquet(self.path+'labels_test.parquet')
+		label_dates.to_parquet(self.path+'labels_dates_test.parquet')
+		pd_dementia_dates.to_parquet(self.path+'pd_dem_disease_dates.parquet')
+		excludes.to_parquet(self.path+'excludes_test.parquet')
+
+		return dis_ohe_ukb,labels,label_dates
+
 
 	def onehotencoder(self,df,cols,excwords,maxrecs=10,mincount=0.8):
+
+
 	
 		#create nulls where unknown for future imputation
 		for col in cols:
@@ -298,6 +382,9 @@ class data_proc_main(object):
 		ohe_cols=\
 		[col for col in cols if len(df[col].value_counts())<maxrecs
 		and df[col].count()/df[col].shape[0]>mincount]
+
+		#include the exceptions here and make a list of set in case there are duplicates
+		ohe_cols=list(set(list(ohe_cols+self.ohe_exceps)))
 
 		rejcols=[c for c in cols if c not in ohe_cols and len(df[c].value_counts())<maxrecs]
 
@@ -361,7 +448,7 @@ class data_proc_main(object):
 		cols_nomiss=[col for col in cols_nomiss if not re.search(self.excs,col) ]
 		return cols_nomiss
 
-	def splitvars(self):
+	def load_df(self):
 		cols_nomiss=self.cols_nonmiss()
 		df=pd.read_parquet(self.path+self.fullfile,columns=cols_nomiss)
 		df=self.convert_null(df)
@@ -389,7 +476,7 @@ class data_proc_main(object):
 		return df_ord
 
 	def ohe_data(self,df):
-		ohe_vars=self.vars_det(df)[0]
+		ohe_vars=self.vars_det(df)[1]
 		ohe_df,ohe_excluded=self.onehotencoder(df=df[ohe_vars+['eid']],cols=ohe_vars,excwords=self.excwords)
 		return ohe_df,ohe_excluded
 
@@ -401,7 +488,8 @@ class data_proc_main(object):
 	def model_data(self,df):
 
 		excluded_vars=self.vars_det(df)[2]
-		ohe_df=self.ohe_data(df)
+		ohe_df,excvars=self.ohe_data(df)
+		excluded_vars=excluded_vars+excvars
 		cts_df=self.cts_data(df)
 		df_ord=self.ord_data(df)
 		df_model=pd.merge(df_ord,cts_df,on='eid',how='left')
@@ -412,18 +500,6 @@ class data_proc_main(object):
 
 	
 		
-
-
-	
-
-class data_fixes(object):
-
-	def __init__(self):
-		"""
-		Initilising models.
-		"""
-		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
-
 
 
 
