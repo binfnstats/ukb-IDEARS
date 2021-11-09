@@ -17,11 +17,11 @@ Michael Allwright
 # Extra
 You should run this as a notebook within Visual Studio Code
 """
-#%%
+
 import pandas as pd
 
 
-#%%
+
 class IDEARS_pipeline(object):
     """
     FinPass Model for generating insights: Expenses, Income, Assets, Liabilities
@@ -29,13 +29,13 @@ class IDEARS_pipeline(object):
 
     def __init__(self):
         """
-        Initilising all required files for enrichment
+        Initilising all required files for data processing
         """
         self.M1 = 'M1'
 
         self.A1 = 'A1'
         
-        print('All init DONE for enrichment files')
+        print('All init DONE for data processing')
 
     def check(self, X, features_names=None) -> pd.DataFrame:
         """
@@ -43,9 +43,24 @@ class IDEARS_pipeline(object):
 
         Parameters
         ----------
-        X : dataframe with all users' IDs that the FinPass needs to be generated
+        X : dataframe with all variables required to model
         feature_names : array of feature names (optional)
         """
+
+        #creation of raw data from csv file - should be one off and then stored as parquet in
+        #relevant subfiles
+
+        #all data processing steps run after
+
+        #merge step
+
+        #study variable creation
+
+        #model run and SHAP
+
+        #Analysis
+
+
 
         ## CAUTION: parrallelisation will be implemented once components are fixed
         # first, DB getting...

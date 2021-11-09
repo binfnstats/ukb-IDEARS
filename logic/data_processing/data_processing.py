@@ -17,6 +17,7 @@ import re
 import icd10
 import datetime as dt
 import ast
+from sklearn.preprocessing import StandardScaler
 
 class data_proc_main(object):
 	"""
@@ -92,6 +93,29 @@ class data_proc_main(object):
 		'Scotland - Very Remote Rural': 0,
 		'England/Wales - Urban - sparse': 1}
 
+		self.studycols_PD=['eid','PD','sex_f31_0_0','calc','neuroticism_score_f20127_0_0','non_ost', 'depressed','beta_block',\
+	'melanoma','hypertension','ipaq_activity_group_f22032_0_0','age_when_attended_assessment_centre_f21003_0_0',\
+	'never_eat_eggs_dairy_wheat_sugar_f6144_0_0_Dairy products', 'urate_f30880_0_0', 'non_ost_non_asp','Constipation',\
+	'ibuprofen', 'coffee_intake_f1498_0_0','alcohol','pesticide_exposure','urban_rural','TBI','smoking_status_f20116_0_0',\
+	'parental_pd']
+
+		self.cols_lancet=list(self.genos)+['dementia','eid','age_when_attended_assessment_centre_f21003_0_0','APOE4_Carriers','TBI',
+		'alcohol','pollution','hypertension','diabetes','Hear_loss','ever_smoked_f20160_0_0','body_mass_index_bmi_f21001_0_0',
+		'depressed','smoking_status_f20116_0_0','ipaq_activity_group_f22032_0_0','Qualif_Score',
+		'frequency_of_friendfamily_visits_f1031_0_0']
+
+
+		self.studycols_dem=list(self.genos)+['dementia','eid','age_when_attended_assessment_centre_f21003_0_0','APOE4_Carriers',
+		'pollution','sedentary_time','diabetes','low_activity','salad_raw_vegetable_intake_f1299_0_0',
+		'fresh_fruit_intake_f1309_0_0','weight_change_compared_with_1_year_ago_f2306_0_0',
+		'frequency_of_tiredness_lethargy_in_last_2_weeks_f2080_0_0','ipaq_activity_group_f22032_0_0','usual_walking_pace_f924_0_0',
+		'hand_grip_strength_left_f46_0_0','hand_grip_strength_right_f47_0_0','body_mass_index_bmi_f21001_0_0',
+		'systolic_blood_pressure_automated_reading_f4080_0_0','diastolic_blood_pressure_automated_reading_f4079_0_0',
+		'frailty_score','smoking_status_f20116_0_0','cholesterol_f30690_0_0','hdl_cholesterol_f30760_0_0',
+		'processed_meat_intake_f1349_0_0','mean_time_to_correctly_identify_matches_f20023_0_0',
+		'number_of_incorrect_matches_in_round_f399_0_2','sex_f31_0_0','hypertension','ever_smoked_f20160_0_0','alcohol','TBI',
+		'Hear_loss','Qualif_Score']
+
 
 
 		#columns to include for merges - key columns for analyses selections
@@ -114,7 +138,7 @@ class data_proc_main(object):
 		"""
 		#special columns to modify
 		self.speccols=['sex_f31','average_total_household_income_before_tax_f738','usual_walking_pace_f924',
- 		'frequency_of_friendfamily_visits_f1031','drive_faster_than_motorway_speed_limit_f1100',
+		'frequency_of_friendfamily_visits_f1031','drive_faster_than_motorway_speed_limit_f1100',
 		'weekly_usage_of_mobile_phone_in_last_3_months_f1120','qualifications_f6138',
 		'gender','avgincome','walkspeed','freqfriendfamily','faster_mot_speed','weekly_mobphone_mins',
 		'qualif_score','APOE4_Carriers']
@@ -137,6 +161,15 @@ class data_proc_main(object):
 		"""
 
 		return [col for col in df if string in col]
+
+	def std_scale_newvar(self,df,vars=[],name='inflammation'):
+		for var in vars:
+			trans = StandardScaler()
+			df[var+'std']=trans.fit_transform(np.asarray(df[var]).reshape(-1, 1))
+		
+		df[name]=df[[v+'std' for v in vars]].sum(axis=1)
+		df.drop(columns=[v+'std' for v in vars],inplace=True)
+		return df
 
 	def returndesc(self,string):
 
@@ -607,7 +640,10 @@ class data_proc_main(object):
 		ukb_treatments=pd.read_parquet(self.path+'treatments_test.parquet')
 		dis_ohe=pd.read_parquet(self.path+'dis_ohe_test.parquet')
 		dis_ohe_icd10=pd.read_parquet(self.path+'dis_ohe_icd10_test.parquet')
+		df_fam_pddem=pd.read_parquet(self.path+'df_fam_pddem.parquet')
+
 		labels=pd.read_parquet(self.path+'labels_test.parquet')
+		label_dates=pd.read_parquet(self.path+'labels_dates_test.parquet')
 		excludes=pd.read_parquet(self.path+'excludes_test.parquet')
 		deaths=pd.read_parquet(self.path+'deaths_test.parquet')
 		
@@ -619,7 +655,7 @@ class data_proc_main(object):
 		deaths=deaths[(deaths['date_of_death_f40000_0_0']!='nan')]
 		deaths['date_of_death_f40000_0_0']=pd.to_datetime(deaths['date_of_death_f40000_0_0'])
 
-		for i,df in enumerate([dis_ohe,dis_ohe_icd10,labels,excludes,deaths,df_model,ukb_treatments,apoe4_df]):
+		for i,df in enumerate([dis_ohe,dis_ohe_icd10,labels,excludes,deaths,df_model,ukb_treatments,apoe4_df,df_fam_pddem]):
 			df['eid']=df['eid'].astype(str)
 
 		mask_dem=~(labels[[col for col in labels.columns if 'dementia' in col]].sum(axis=1)>0)
@@ -643,13 +679,12 @@ class data_proc_main(object):
 
 		if use_icd10:
 			df=pd.merge(df_model,dis_ohe_icd10,on='eid',how='inner')
-			df=pd.merge(df,ukb_treatments,on='eid',how='left')
-			df=pd.merge(df,apoe4_df,on='eid',how='left')
-
 		else:
 			df=pd.merge(df_model,dis_ohe,on='eid',how='inner')
-			df=pd.merge(df,ukb_treatments,on='eid',how='left')
-			df=pd.merge(df,apoe4_df,on='eid',how='left')
+
+		df=pd.merge(df,ukb_treatments,on='eid',how='left')
+		df=pd.merge(df,apoe4_df,on='eid',how='left')
+		df=pd.merge(df,df_fam_pddem,on='eid',how='left')
 
 		labels['dementia']=labels[[col for col in labels.columns if 'dementia' in col]].max(axis=1)
 		labels['PD']=labels[[col for col in labels.columns if 'parkinson' in col]].max(axis=1)
@@ -673,8 +708,9 @@ class data_proc_main(object):
 		df_dem.to_parquet(self.path+'df_dem_20211024.parquet')
 		df_pd.to_parquet(self.path+'df_pd_20211024.parquet')
 		df_ad.to_parquet(self.path+'df_ad_20211024.parquet')
+		df.to_parquet(self.path+'df_all_20211024.parquet')
 
-		return df_dem,df_pd,df_ad
+		return df_dem,df_pd,df_ad,df
 
 
 	def remap_var(self,df,var,dictvar,drop=False):
@@ -709,6 +745,7 @@ class data_proc_main(object):
 
 		"""
 		this function maps all the columns used in previous studies and meta-analyses
+		it also calculates/ transforms a number of variables such as AST:ALT ratio
 		"""
 
 		
@@ -724,17 +761,31 @@ class data_proc_main(object):
 			df=pd.read_parquet(self.path+'df_pd_20211024.parquet')
 			PD_spec=PD_spec[[c for c in PD_spec.columns if c not in df.columns or c=='eid']]
 			df=pd.merge(df,PD_spec,on='eid',how='left')
+			#mapping of PD variables
+			df['pesticide_exposure']=df['worked_with_pesticides_f22614_0_0'].map(self.pest_map)
+			df['urban_rural']=df['home_area_population_density_urban_or_rural_f20118_0_0'].map(self.urb_rur)
 
-		#mapping of PD variables
-		df['pesticide_exposure']=df['worked_with_pesticides_f22614_0_0'].map(self.pest_map)
-		df['urban_rural']=df['home_area_population_density_urban_or_rural_f20118_0_0'].map(self.urb_rur)
+		elif depvar=="all":
+			PD_spec=pd.read_parquet('%s%s' % (self.path,'PD_specific.parquet'))
+			df=pd.read_parquet(self.path+'df_all_20211024.parquet')
+			PD_spec=PD_spec[[c for c in PD_spec.columns if c not in df.columns or c=='eid']]
+			df=pd.merge(df,PD_spec,on='eid',how='left')
+
+		
+		df['melanoma']=df[self.findcols(df,'melano')].max(axis=1)
 
 		#remapping of these specific variables to ordinal
 		df=self.remap_var(df=df,var="APOE4_Carriers",dictvar=self.genos,drop=False)
 		df=self.remap_var(df=df,var="Qualif_Score",dictvar=self.qualif,drop=True)
 
+		#neurochemical ratios
 		df['AST_ALT_ratio']=df['aspartate_aminotransferase_f30650_0_0']/\
 		df['alanine_aminotransferase_f30620_0_0']
+
+		mask_inf=(df['lymphocyte_count_f30120_0_0']==0)|pd.isnull(df['lymphocyte_count_f30120_0_0'])
+		df['neutrophill_lymphocyte_ratio']=np.nan
+		df['neutrophill_lymphocyte_ratio'][~mask_inf]=df['neutrophill_count_f30140_0_0']/\
+		df['lymphocyte_count_f30120_0_0']
 
 		df['diabetes']=df[self.findcols(df,'diabetes')].max(axis=1)
 
@@ -812,6 +863,32 @@ class data_proc_main(object):
 		'depressed','smoking_status_f20116_0_0','ipaq_activity_group_f22032_0_0','Qualif_Score',
 		'frequency_of_friendfamily_visits_f1031_0_0']
 
+		var_renames=dict({'total_dis':'Total ICD10 Conditions at baseline'})
+
+		
+		df['Retired']=0
+		mask=(df['current_employment_status_f6142_0_0_Retired']==1)
+		df['Retired'][mask]=1
+	
+
+		for v in var_renames:
+			if v in df.columns:
+				df.rename(columns={v:var_renames[v]},inplace=True)
+
+
+		#more combined features
+		inflamvars=['neutrophill_count_f30140_0_0','lymphocyte_count_f30120_0_0','creactive_protein_f30710_0_0','platelet_count_f30080_0_0']
+		frail_cols=['Total ICD10 Conditions at baseline','number_of_treatmentsmedications_taken_f137_0_0',
+		'frailty_index','walk_frail','ipaq_frail','grips_frail']
+
+		#defined combined features as sum of standard scaled features
+		df=self.std_scale_newvar(df,inflamvars,name='inflammation')
+		df=self.std_scale_newvar(df,frail_cols,name='frailty')
+
+
+
+
+
 		if depvar=="dementia":
 
 			df_study=df[studycols_dem]
@@ -823,8 +900,18 @@ class data_proc_main(object):
 			df_tuple=[df,df_study,df_lancet]
 
 		elif depvar=="PD":
+			
+			#drop the object columns we brought in
+			df.drop(columns=[col for col in df.columns if col!='eid' and re.search('obj',str(df[col].dtype))],inplace=True)
 			df.to_parquet(self.path+'df_PD_final.parquet')
 			df_tuple=[df]
+		
+		elif depvar=="all":
+
+			df.drop(columns=[col for col in df.columns if col!='eid' and re.search('obj',str(df[col].dtype))],inplace=True)
+			df.to_parquet(self.path+'df_all_final.parquet')
+			df_tuple=[df]
+
 
 
 		return df_tuple

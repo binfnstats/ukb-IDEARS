@@ -77,6 +77,14 @@ class dataload():
 		df.to_parquet('%s%s' % (self.path,'ICD10s_test.parquet'))
 		return df
 
+	def var_check(self,string='igf1|age_when|date_of_atten'):
+		df=self.read_all_samp()
+		cols=[col for col in df.columns if re.search(string,col) or 'eid' in col or 'sex_f31_0_0' in col or 'date_of_death' in col]
+		
+		df=pd.read_csv('%s%s' % (self.path,self.inpfile),usecols=cols)
+		df['eid']=df['eid'].astype(str)
+		return df
+
 	def PD_specific_out(self):
 		"""
 		Get specific variables required for PD based on meta-analyses
