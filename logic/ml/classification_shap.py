@@ -57,7 +57,43 @@ class IDEARs_funcs(object):
 	Diag_PD|Age_Diag_Dementia|Age_Diag_PD|  Parkinson|interviewer|date_of_attending_assessment_centre_f53|years_after_dis|\
 	Frontotemporal|daysto|hospital_recoded|from_hospital|Age_Today|year_of_birth|pollution_|pesticide_exposure|\
 	parental_ad_status_|birth_weight|parkins|sex_inference|sample_dilut|samesex|mobile_phone|inflammation|frail|\
-	admission_polymorphic|faster_mot|drive_faster_than|time_to_complete_round|Genotype|genetic_principal|employment|Free-text|xxxx'  
+	admission_polymorphic|faster_mot|drive_faster_than|time_to_complete_round|Genotype|genetic_principal|employment|Free-text|xxxx' 
+
+		self.variablemap=dict({'testosterone_f30850_0_0':'testosterone',
+		'age_when_attended_assessment_centre_f21003_0_0':'age at baseline',
+		'parental_pd':'parent with PD',
+		'neutrophill_percentage_f30200_0_0':'neutrophill percentage',
+		'igf1_f30770_0_0':'IGF1',
+		'suffer_from_nerves_f2010_0_0':'suffer from nerves',
+		'avg_duration_to_first_press_of_snapbutton_in_each_round':'average duration to first press of snap button',
+		'neutrophill_lymphocyte_ratio':'neutrophill to lymphocyte count ratio',
+		'creactive_protein_f30710_0_0':'c-reactive protein',
+		'Retired':'retired at baseline',
+		'triglycerides_f30870_0_0':'triglycerides',
+		'creatinine_enzymatic_in_urine_f30510_0_0':'creatine enzymatic in urine',
+		'total_bilirubin_f30840_0_0':'bilirubin',
+		'cholesterol_f30690_0_0':'cholesterol',
+		'apolipoprotein_a_f30630_0_0':'apoplipoprotein A',
+		'glycated_haemoglobin_hba1c_f30750_0_0':'glycated haemoglobin',
+		'creatinine_f30700_0_0':'creatine',
+		'vitamin_d_f30890_0_0':'vitamin D',
+		'platelet_crit_f30090_0_0':'platelet crit',
+		'number_of_treatmentsmedications_taken_f137_0_0':'number of treatments or medictions',
+		'hip_circumference_f49_0_0':'hip circumference',
+		'usual_walking_pace_f924_0_0':'usual walking pace',
+		'AST_ALT_ratio':'AST:ALT ratio',
+		'Total ICD10 Conditions at baseline':'Total ICD10 Conditions at baseline',
+		'waist_circumference_f48_0_0':'waist circumference',
+		'sex_f31_0_0':'gender',
+		'forced_vital_capacity_fvc_f3062_0_0':'forced vital capacity',
+		'standing_height_f50_0_0':'height',
+		'mean_reticulocyte_volume_f30260_0_0':'mean reticulocyte volume',
+		'hand_grip_strength_left_f46_0_0':'hand grip strength (left)',
+		'lymphocyte_count_f30120_0_0':'lymphocte count',
+		'chest_pain_or_discomfort_f2335_0_0':'chest pain or discomfort',
+		'platelet_count_f30080_0_0':'platelet count',
+		'alanine_aminotransferase_f30620_0_0':'alanine aminotransferase',
+		'hand_grip_strength_right_f47_0_0':'hand grip strength (right)'}) 
 
 	def holdout_data(self,df,agemin=50,agemax=70,depvar='dementia',apoe=3):
 		mask_age=(df['age_when_attended_assessment_centre_f21003_0_0']>=agemin)&(df['age_when_attended_assessment_centre_f21003_0_0']<=agemax)
@@ -89,6 +125,10 @@ class IDEARs_funcs(object):
 
 		return mod_xgb
 
+	def mapvar(self,x):
+	    if x in self.variablemap:
+	        x=self.variablemap[x]
+	    return x
 
 	def findcols(self,df,string):
 
@@ -499,7 +539,7 @@ class IDEARs_funcs(object):
 	
 		
 		
-	def ABS_SHAP(self,df_shap,df,max_disp=20,figx=10,figy=10,dpi=200,figname='shap_bar'):
+	def ABS_SHAP(self,df_shap,df,max_disp=20,figx=10,figy=10,dpi=200,figname='shap_bar',format_file='.jpg'):
 
 		"""
 		SHAP bar with colours for directions
@@ -544,7 +584,7 @@ class IDEARs_funcs(object):
 			ax.text(v + 0.01, i, str(round(v,4)), color='black', fontweight='bold', fontsize=14, ha='left', va='center')
 
 
-		plt.savefig(self.path_figures+figname+'.svg', dpi=300)
+		plt.savefig(self.path_figures+figname+format_file, dpi=300,bbox_inches='tight')
 		plt.show()
 
 		return k2
@@ -612,22 +652,24 @@ class IDEARs_funcs(object):
 
 	def shapgraphs_tuple(self,tuple,max_disp=20,figname='shap_chart_for..'):
 		df=pd.concat(tuple[1],axis=0)
+		df.columns=[self.mapvar(c) for c in df.columns]
+
 		print(df.shape)
 		df_shap=np.vstack(tuple[0])
 		print(df_shap.shape)
 		outs=self.ABS_SHAP(df_shap,df,max_disp=max_disp,figx=10,figy=15,dpi=200,figname=figname)
 		return outs
 
-	def ROCAUC_tuples(self,df_out_list,labels,cols,figname='ROCAUC for..'):
+	def ROCAUC_tuples(self,df_out_list,labels,cols,figname='ROCAUC for..',format_out='.svg'):
 		dfs=[pd.concat(df_out_list[i],axis=0) for i in range(len(df_out_list))]
 		y_tests=[dfs[i]['y_test'] for i in range(len(df_out_list))]
 		risks=[dfs[i]['risk'] for i in range(len(df_out_list))]
-		self.plot_ROCAUC_mult(y_tests,risks,labels,cols,figname=figname)
+		self.plot_ROCAUC_mult(y_tests,risks,labels,cols,figname=figname,format_out=format_out)
 
 
 
 
-	def plot_ROCAUC_mult(self,y_test,y_score,labels,cols ,figname='check',figx=6,figy=4):
+	def plot_ROCAUC_mult(self,y_test,y_score,labels,cols ,figname='check',figx=6,figy=4,format_out='.svg'):
 
 		"""
 		Plot multiple ROCAUC graphs next to each other and output as an svg figure
@@ -643,7 +685,7 @@ class IDEARs_funcs(object):
 			d["fpr{0}".format(i)] = fpr
 			d["tpr{0}".format(i)] = tpr
 			d["meanauc{0}".format(i)]= mean_auc
-			plt.plot(fpr, tpr, cols[i], alpha = 0.8,label=r'%s (AUC = %0.2f)' % (labels[i],mean_auc))
+			plt.plot(fpr, tpr, cols[i], alpha = 0.8,label=r'%s (AUC = %0.3f)' % (labels[i],mean_auc))
 			aucs.append(mean_auc)
 			
 		plt.xlim([-0.01, 1.01])
@@ -654,7 +696,7 @@ class IDEARs_funcs(object):
 		plt.xticks(fontsize='18')
 		plt.yticks(fontsize='18')
 		
-		plt.savefig(self.path_figures+figname+'.svg', dpi=300)
+		plt.savefig(self.path_figures+figname+format_out, dpi=300,bbox_inches='tight')
 		plt.show()
 			
 		return aucs
