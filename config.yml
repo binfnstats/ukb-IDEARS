@@ -19,4 +19,7 @@ runsteps:
 ratios:
   rat_missing: 0.8
 
+data:
+  path: "/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
+  inpfile: 'all_092021.csv'
 
