@@ -254,6 +254,14 @@ class data_proc_main(object):
 
 		return df_out
 
+	def specific_disease_label(self,icd10s,disname):
+		df_dis_date=pd.read_parquet(self.path+'df_dis_date_test.parquet')
+		dis_label=pd.DataFrame(df_dis_date[(df_dis_date['disease'].isin(icd10s))].\
+	groupby('eid').agg({'dis_aft':'max','disease_date':'min'})).reset_index()
+
+		return dis_label
+
+
 
 
 	def dis_date_file(self):
