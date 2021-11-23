@@ -27,6 +27,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectKBest
 from sklearn.inspection import partial_dependence,plot_partial_dependence
 
+from scipy import stats
+from scipy.stats import t
+
 import shap
 from xgboost import XGBClassifier,plot_importance
 
@@ -59,51 +62,119 @@ class IDEARs_funcs(object):
 	parental_ad_status_|birth_weight|parkins|sex_inference|sample_dilut|samesex|mobile_phone|inflammation|frail|\
 	admission_polymorphic|faster_mot|drive_faster_than|time_to_complete_round|Genotype|genetic_principal|employment|Free-text|xxxx' 
 
-		self.variablemap=dict({'testosterone_f30850_0_0':'testosterone',
-		'age_when_attended_assessment_centre_f21003_0_0':'age at baseline',
-		'parental_pd':'parent with PD',
-		'neutrophill_percentage_f30200_0_0':'neutrophill percentage',
+		self.variablemap=dict({'testosterone_f30850_0_0':'Testosterone',
+		'age_when_attended_assessment_centre_f21003_0_0':'Age at baseline',
+		'parental_pd':'Parent with PD',
+		'neutrophill_percentage_f30200_0_0':'Neutrophill percentage',
 		'igf1_f30770_0_0':'IGF1',
-		'suffer_from_nerves_f2010_0_0':'suffer from nerves',
-		'avg_duration_to_first_press_of_snapbutton_in_each_round':'average duration to first press of snap button',
-		'neutrophill_lymphocyte_ratio':'neutrophill to lymphocyte count ratio',
-		'creactive_protein_f30710_0_0':'c-reactive protein',
-		'Retired':'retired at baseline',
-		'triglycerides_f30870_0_0':'triglycerides',
-		'creatinine_enzymatic_in_urine_f30510_0_0':'creatine enzymatic in urine',
-		'total_bilirubin_f30840_0_0':'bilirubin',
-		'cholesterol_f30690_0_0':'cholesterol',
-		'apolipoprotein_a_f30630_0_0':'apoplipoprotein A',
-		'glycated_haemoglobin_hba1c_f30750_0_0':'glycated haemoglobin',
-		'creatinine_f30700_0_0':'creatine',
-		'vitamin_d_f30890_0_0':'vitamin D',
-		'platelet_crit_f30090_0_0':'platelet crit',
-		'number_of_treatmentsmedications_taken_f137_0_0':'number of treatments or medictions',
-		'hip_circumference_f49_0_0':'hip circumference',
-		'usual_walking_pace_f924_0_0':'usual walking pace',
+		'suffer_from_nerves_f2010_0_0':'Suffer from nerves',
+		'avg_duration_to_first_press_of_snapbutton_in_each_round':'Average duration to first press of snap button',
+		'neutrophill_lymphocyte_ratio':'Neutrophill to lymphocyte count ratio',
+		'creactive_protein_f30710_0_0':'C-reactive protein',
+		'Retired':'Retired at baseline',
+		'triglycerides_f30870_0_0':'Triglycerides',
+		'creatinine_enzymatic_in_urine_f30510_0_0':'Creatine enzymatic in urine',
+		'total_bilirubin_f30840_0_0':'Bilirubin',
+		'cholesterol_f30690_0_0':'Cholesterol',
+		'apolipoprotein_a_f30630_0_0':'Apoplipoprotein A',
+		'glycated_haemoglobin_hba1c_f30750_0_0':'Glycated haemoglobin',
+		'creatinine_f30700_0_0':'Creatine',
+		'vitamin_d_f30890_0_0':'Vitamin D',
+		'platelet_crit_f30090_0_0':'Platelet crit',
+		'number_of_treatmentsmedications_taken_f137_0_0':'Number of treatments or medications',
+		'hip_circumference_f49_0_0':'Hip circumference',
+		'usual_walking_pace_f924_0_0':'Usual walking pace',
 		'AST_ALT_ratio':'AST:ALT ratio',
 		'Total ICD10 Conditions at baseline':'Total ICD10 Conditions at baseline',
-		'waist_circumference_f48_0_0':'waist circumference',
-		'sex_f31_0_0':'gender',
-		'forced_vital_capacity_fvc_f3062_0_0':'forced vital capacity',
-		'standing_height_f50_0_0':'height',
-		'mean_reticulocyte_volume_f30260_0_0':'mean reticulocyte volume',
-		'hand_grip_strength_left_f46_0_0':'hand grip strength (left)',
-		'lymphocyte_count_f30120_0_0':'lymphocte count',
-		'chest_pain_or_discomfort_f2335_0_0':'chest pain or discomfort',
-		'platelet_count_f30080_0_0':'platelet count',
-		'alanine_aminotransferase_f30620_0_0':'alanine aminotransferase',
-		'hand_grip_strength_right_f47_0_0':'hand grip strength (right)'}) 
+		'waist_circumference_f48_0_0':'Waist circumference',
+		'sex_f31_0_0':'Gender',
+		'forced_vital_capacity_fvc_f3062_0_0':'Forced vital capacity',
+		'standing_height_f50_0_0':'Height',
+		'mean_reticulocyte_volume_f30260_0_0':'Mean reticulocyte volume',
+		'hand_grip_strength_left_f46_0_0':'Hand grip strength (left)',
+		'lymphocyte_count_f30120_0_0':'Lymphocyte count',
+		'chest_pain_or_discomfort_f2335_0_0':'Chest pain or discomfort',
+		'platelet_count_f30080_0_0':'Platelet count',
+		'alanine_aminotransferase_f30620_0_0':'Alanine aminotransferase',
+		'hand_grip_strength_right_f47_0_0':'Hand grip strength (right)',
+		'ldl_direct_f30780_0_0':'LDL Direct',
+		'neutrophill_count_f30140_0_0':'Neutrophil Count',
+		'number_of_selfreported_noncancer_illnesses_f135_0_0':'Number of self reported non cancer illnesses',
+		'urate_f30880_0_0':'Urate',
+		'coffee_intake_f1498_0_0':'Coffee Intake',
+		'depressed':'Depression',
+		'hypertension':'Hypertension',
+		'ibuprofen':'Taking Ibuprofen',
+		'ipaq_activity_group_f22032_0_0':'IPAQ Activity Level',
+		'mean_corpuscular_volume_f30040_0_0':'Mean corpuscular volume',
+		'mother_still_alive_f1835_0_0':'Mother Still Alive',
+		'neuroticism_score_f20127_0_0':'Neuroticism Score',
+		'non_ost':'Non-steroidal anti-inflammatories',
+		'non_ost_non_asp':'Non-steroidal anti-inflammatories excluding aspirin',
+		'smoking_status_f20116_0_0':'Smoking',
+		'urban_rural':'Urban Rural Score'}) 
 
-	def holdout_data(self,df,agemin=50,agemax=70,depvar='dementia',apoe=3):
+ 
+		self.variablemap_group=dict({'testosterone_f30850_0_0':'Other',
+		'age_when_attended_assessment_centre_f21003_0_0':'Demographic',
+		'parental_pd':'Demographic',
+		'neutrophill_percentage_f30200_0_0':'Inflammation',
+		'igf1_f30770_0_0':'Blood Biomarkers',
+		'suffer_from_nerves_f2010_0_0':'Biometric',
+		'avg_duration_to_first_press_of_snapbutton_in_each_round':'Biometric',
+		'neutrophill_lymphocyte_ratio':'Inflammation',
+		'creactive_protein_f30710_0_0':'Inflammation',
+		'Retired':'Demographic',
+		'triglycerides_f30870_0_0':'Cardiovascular',
+		'creatinine_enzymatic_in_urine_f30510_0_0':'Blood Biomarkers',
+		'total_bilirubin_f30840_0_0':'Blood Biomarkers',
+		'cholesterol_f30690_0_0':'Cardiovascular',
+		'apolipoprotein_a_f30630_0_0':'Blood Biomarkers',
+		'glycated_haemoglobin_hba1c_f30750_0_0':'Cardiovascular',
+		'creatinine_f30700_0_0':'Blood Biomarkers',
+		'vitamin_d_f30890_0_0':'Blood Biomarkers',
+		'platelet_crit_f30090_0_0':'Blood Biomarkers',
+		'number_of_treatmentsmedications_taken_f137_0_0':'Frailty',
+		'hip_circumference_f49_0_0':'Biometric',
+		'usual_walking_pace_f924_0_0':'Cardiovascular',
+		'AST_ALT_ratio':'Blood Biomarkers',
+		'Total ICD10 Conditions at baseline':'Frailty',
+		'waist_circumference_f48_0_0':'Biometric',
+		'sex_f31_0_0':'Demographic',
+		'forced_vital_capacity_fvc_f3062_0_0':'Cardiovascular',
+		'standing_height_f50_0_0':'Biometric',
+		'mean_reticulocyte_volume_f30260_0_0':'Blood Biomarkers',
+		'hand_grip_strength_left_f46_0_0':'Frailty',
+		'lymphocyte_count_f30120_0_0':'Inflammation',
+		'chest_pain_or_discomfort_f2335_0_0':'Biometric',
+		'platelet_count_f30080_0_0':'Blood Biomarkers',
+		'alanine_aminotransferase_f30620_0_0':'Blood Biomarkers',
+		'hand_grip_strength_right_f47_0_0':'Frailty',
+		'calc':'Other',
+		'coffee_intake_f1498_0_0':'Other',
+		'depressed':'Other',
+		'hypertension':'Other',
+		'ibuprofen':'Other',
+		'ipaq_activity_group_f22032_0_0':'Cardiovascular',
+		'mean_corpuscular_volume_f30040_0_0':'Other',
+		'mother_still_alive_f1835_0_0':'Demographic',
+		'neuroticism_score_f20127_0_0':'Other',
+		'non_ost':'Other',
+		'non_ost_non_asp':'Other',
+		'number_of_selfreported_noncancer_illnesses_f135_0_0':'Frailty',
+		'smoking_status_f20116_0_0':'Other',
+		'urate_f30880_0_0':'Blood Biomarkers',
+		'urban_rural':'Demographic'}) 
+
+	def holdout_data(self,df,agemin=50,agemax=70,depvar='dementia',apoe=3,holdout_ratio=0.2):
 		mask_age=(df['age_when_attended_assessment_centre_f21003_0_0']>=agemin)&(df['age_when_attended_assessment_centre_f21003_0_0']<=agemax)
 
 		df=self.maskapoedf(df[mask_age],apoe=apoe)
 		df=self.meanimp(df)
 
 		mask=(df[depvar]==1)
-		print('Total dementia in data '+str(sum(mask)))
-		df_val=pd.concat([df[mask].sample(round(self.holdout_ratio*df[mask].shape[0])),df[~mask].sample(round(self.holdout_ratio*df[~mask].shape[0]))],axis=0)
+		print('Total '+depvar+' in data: '+str(sum(mask)))
+		df_val=pd.concat([df[mask].sample(round(holdout_ratio*df[mask].shape[0])),df[~mask].sample(round(holdout_ratio*df[~mask].shape[0]))],axis=0)
 		mask_val=(df['eid'].isin(df_val['eid']))
 		df_train=df[~mask_val]
 
@@ -126,9 +197,16 @@ class IDEARs_funcs(object):
 		return mod_xgb
 
 	def mapvar(self,x):
-	    if x in self.variablemap:
-	        x=self.variablemap[x]
-	    return x
+		if x in self.variablemap:
+			x=self.variablemap[x]
+		return x
+
+	def invmap(self,x):
+
+		variablemap_inv=dict({self.variablemap[x]:x for x in self.variablemap})
+		if x in variablemap_inv:
+			x=variablemap_inv[x]
+		return x
 
 	def findcols(self,df,string):
 
@@ -569,18 +647,21 @@ class IDEARs_funcs(object):
 		k.columns = ['Variable','SHAP_abs']
 		k2 = k.merge(corr_df,left_on = 'Variable',right_on='Variable',how='inner')
 		k2 = k2.sort_values(by='SHAP_abs',ascending = True)
-		k2=k2.tail(max_disp)
-		colorlist = k2['Sign']
+
+		k3=k2.tail(max_disp)
+		colorlist = k3['Sign']
 		
 		figure(figsize=(figx, figy), dpi=dpi)
 		matplotlib.rc('xtick', labelsize=20) 
 		matplotlib.rc('ytick', labelsize=20)
 		
-		ax = k2.plot.barh(x='Variable',y='SHAP_abs',color = colorlist,legend=False,figsize=(figx, figy))
+		ax = k3.plot.barh(x='Variable',y='SHAP_abs',color = colorlist,legend=False,figsize=(figx, figy))
 		ax.set_xlabel("SHAP Value (Red = Positive Impact)")
+		ax.xaxis.label.set_visible(False)
+		ax.yaxis.label.set_visible(False)
 
 		
-		for i, v in enumerate(list(k2['SHAP_abs'])):
+		for i, v in enumerate(list(k3['SHAP_abs'])):
 			ax.text(v + 0.01, i, str(round(v,4)), color='black', fontweight='bold', fontsize=14, ha='left', va='center')
 
 
@@ -588,6 +669,71 @@ class IDEARs_funcs(object):
 		plt.show()
 
 		return k2
+
+
+	def shap_plotonly(self,df,max_disp=25,figx=10,figy=10,dpi=200,figname='shap_bar',format_file='.jpg'):
+
+		df=df.head(max_disp)
+		df.sort_values(by='SHAP_abs',inplace=True)
+		colorlist = df['Sign']
+		
+		figure(figsize=(figx, figy), dpi=dpi)
+		matplotlib.rc('xtick', labelsize=20) 
+		matplotlib.rc('ytick', labelsize=20)
+		
+		ax = df.plot.barh(x='Variable',y='SHAP_abs',color = colorlist,legend=False,figsize=(figx, figy))
+		ax.set_xlabel("SHAP Value (Red = Positive Impact)")
+		ax.xaxis.label.set_visible(False)
+		ax.yaxis.label.set_visible(False)
+
+		
+		for i, v in enumerate(list(df['SHAP_abs'])):
+			ax.text(v + 0.01, i, str(round(v,4)), color='black', fontweight='bold', fontsize=14, ha='left', va='center')
+
+
+		plt.savefig(self.path_figures+figname+format_file, dpi=300,bbox_inches='tight')
+		plt.show()
+
+	def boxplot_shap(self,df,meanshapmin=0.025,minrecs=19,lab='all',figprint=False,figname='SHAP',format_file='.jpg'):
+		figure(figsize=(10, 20), dpi=200)
+		df=df.copy()
+		df=pd.concat(df,axis=0)
+		
+		df['recs']=df.groupby('Variable')['SHAP_abs'].transform('count')
+		df=df[(df['recs']>minrecs)]
+
+		df['Variable'][(df['Variable']=='Lymphocte count')]='Lymphocyte count'
+		
+		df['mean_shap']=df.groupby('Variable')['SHAP_abs'].transform('mean')
+		df['mean_corr']=df.groupby('Variable')['Corr'].transform('mean')
+		df=df[(df['mean_shap']>=meanshapmin)]
+		df['Sign']=df['mean_corr'].apply(lambda x:'r' if x>0 else 'b')
+		df['Variable']=df['Variable'].apply(self.mapvar)
+		df.sort_values(by='mean_shap',ascending=False,inplace=True)
+
+		dic=dict(df.groupby(['Variable'])['Sign'].max())
+
+		pal = {var: dic[var] for var in df['Variable'].unique()}
+		
+		colorlist = df['Sign']
+		ax=sns.boxplot(data=df,y='Variable',x='SHAP_abs',palette=pal)
+		ax.xaxis.label.set_visible(False)
+		ax.yaxis.label.set_visible(False)
+		if figprint:
+			plt.savefig(self.path_figures+figname+format_file, dpi=300,bbox_inches='tight')
+		
+		plt.show()
+		
+		df_out=pd.DataFrame(df.groupby('Variable').agg({'SHAP_abs':'mean','Corr':'mean'})).reset_index()
+		df_out.columns=['Variable','shap_abs'+lab,'Corr'+lab]
+		
+		
+		
+		return df_out
+
+
+
+
 
 	def varsplit_shap(self,df_shap,shap_values,var,figname="check"):
 
@@ -597,7 +743,7 @@ class IDEARs_funcs(object):
 
 			self.ABS_SHAP(sv, df,25,figx=15,figy=15,figname=figname+' '+str(v))
 
-	def run_entire_data_pd(self,df,drops,wordsremove,runs=5,outfile='shap_tuple.pkl'):
+	def run_entire_data_pd(self,df,drops,wordsremove,outfile,savefile=True,save_featslist=False,runs=5,holdout_ratio=0.2):
 
 		shap_values_list=[]
 		X_list=[]
@@ -605,7 +751,7 @@ class IDEARs_funcs(object):
 
 		for i in range(runs):
 			print(i)
-			df_train,df_val=self.holdout_data(df=df,agemin=50,agemax=70,depvar='PD')
+			df_train,df_val=self.holdout_data(df=df,agemin=50,agemax=70,depvar='PD',holdout_ratio=0.2)
 			mod1=self.simpletrain(df=df_train,model=self.model(),dropcols=drops,
 				wordsremove=wordsremove,depvar='PD',resizeratio=100,shapshow=0)
 			shap_values, X, df_out=self.simple_eval(df=df_val,model=mod1,dropcols=drops,
@@ -617,9 +763,15 @@ class IDEARs_funcs(object):
 			df_out_list.append(df_out)
 
 		shap_tuple=[shap_values_list,X_list,df_out_list]
-		shap_tuple_file=open(self.path+outfile,'wb')
-		pickle.dump(shap_tuple,shap_tuple_file)
-		shap_tuple_file.close()
+
+		if savefile:
+			shap_tuple_file=open(self.path+outfile,'wb')
+			pickle.dump(shap_tuple,shap_tuple_file)
+			shap_tuple_file.close()
+
+		if save_featslist:
+			feats_all=self.shapgraphs_tuple(shap_tuple,max_disp=20,figname=outfile)
+			feats_all.to_parquet(self.path+outfile+'.parquet')
 
 		return shap_tuple
 
@@ -666,6 +818,8 @@ class IDEARs_funcs(object):
 		risks=[dfs[i]['risk'] for i in range(len(df_out_list))]
 		self.plot_ROCAUC_mult(y_tests,risks,labels,cols,figname=figname,format_out=format_out)
 
+		return aucs
+
 
 
 
@@ -700,6 +854,65 @@ class IDEARs_funcs(object):
 		plt.show()
 			
 		return aucs
+
+	
+
+	def auc_boxplot(self,df1,df2,model1='IDEARS',model2='KNOWN ASSOCIATIONS',figname=''):
+
+		if len(df1)!=len(df2):
+			print("length mismatch")
+		nums=len(df1)
+		nrows=df1[0].shape[0]
+
+		df1=pd.concat(df1,axis=0)
+		df2=pd.concat(df2,axis=0)
+
+		aucs=[]
+		model=[]
+
+		for i in range(nums):
+			df1_samp=df1[i*nrows:(i+1)*nrows]
+			df2_samp=df2[i*nrows:(i+1)*nrows]
+			fpr1, tpr1, _ = roc_curve(df1_samp['y_test'],df1_samp['risk'])
+			fpr2, tpr2, _ = roc_curve(df2_samp['y_test'],df2_samp['risk'])
+			mean_auc1=auc(fpr1, tpr1)
+			aucs.append(mean_auc1)
+			model.append(model1)
+			mean_auc2=auc(fpr2, tpr2)
+			aucs.append(mean_auc2)
+			model.append(model2)
+
+		df_out=pd.DataFrame({'model':model,'aucs':aucs})
+
+		sns.boxplot(x='model',y='aucs',data=df_out,color='skyblue')
+
+		ttest_vals=stats.ttest_ind(df_out[(df_out['model']==model1)]['aucs'],\
+	df_out[(df_out['model']==model2)]['aucs'])
+
+		pval_inc=ttest_vals[1]
+
+		if pval_inc<0.001:
+			sig='(***)'
+		elif pval_inc<0.005:
+			sig='(**)'
+		elif pval_inc<0.05:
+			sig='(*)'
+
+
+		x1, x2 = 0, 1   # columns 'Sat' and 'Sun' (first column: 0, see plt.xticks())
+		y=0.77
+		h=0.01
+		plt.ylim(0.65,0.85)
+		plt.plot([x1, x1, x2, x2], [y, y+h, y+h, y], lw=1.5, c='black')
+		plt.text((x1+x2)*.5, y+h, 'p= '+'{:0.3e}'.format(pval_inc)+' '+str(sig), ha='center', va='bottom', color='black',
+			fontsize='18')
+
+		
+		plt.savefig(self.path_figures+'fig AUC Boxplot: '+"_"+figname+'.jpg', dpi=300,bbox_inches='tight')
+		plt.show()
+
+		return df_out
+
 
 	def agenorm2(self,df,var):
 

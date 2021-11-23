@@ -25,6 +25,8 @@ from decimal import Decimal
 from scipy import stats
 from scipy.stats import t
 from sklearn.preprocessing import StandardScaler
+from logic.ml.classification_shap import IDEARs_funcs
+
 
 
 class AnalysisCharts(object):
@@ -38,6 +40,22 @@ class AnalysisCharts(object):
 		"""
 		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
 		self.pathfig='/Users/michaelallwright/Documents/GitHub/UKB/PD/figures/'
+
+		#check which cholesterol it is
+		self.yaxis_units=dict({'igf1_f30770_0_0':'nmol/L','total_bilirubin_f30840_0_0':'umol/L',
+			'AST_ALT_ratio':'AST:ALT ratio',
+			'neutrophill_count_f30140_0_0':'10^9 cells/Litre','lymphocyte_count_f30120_0_0':'10^9 cells/Litre',
+			'neutrophill_lymphocyte_ratio':'Ratio',
+         'creactive_protein_f30710_0_0':'mg/L','ibuprofen':'Percentage taking Ibuprofen',
+         'cholesterol_f30690_0_0':'mmol/l','hdl_cholesterol_f30760_0_0':'mmol/l',
+         'waist_circumference_f48_0_0':'cm','ldl_direct_f30780_0_0':'mmol/L',
+         'Total ICD10 Conditions at baseline':'Number of conditions',
+         'number_of_treatmentsmedications_taken_f137_0_0':'Number of treatments/ medications',
+         'hand_grip_strength_left_f46_0_0':'Kg', 'hand_grip_strength_right_f47_0_0':'Kg',
+         'usual_walking_pace_f924_0_0':'Interview speed',
+           'forced_vital_capacity_fvc_f3062_0_0':'Litres',
+           'glycated_haemoglobin_hba1c_f30750_0_0':'nmol/L'})
+		
 
 
 	def findcols(self,df,string):
@@ -304,12 +322,15 @@ class AnalysisCharts(object):
 		return ttest_vals
 
 	def disease_traj(self,dis_date='parkins_date',disease='PD',vars=['igf1_f30770_0_0'],
-	splitvar='sex_f31_0_0',agemin=50,agemax=70,labels=['Female','Male'],varnames='IGF1',plots='lineplots',ttest_use=False):
+	splitvar='sex_f31_0_0',agemin=50,agemax=70,labels=['Female','Male'],varnames='IGF1',plots='lineplots',ttest_use=False,
+	agegendnormvars=[]):
 
 		"""
 		Brings in the full data and disease date so we can model variables averages across trajectory of patient journey
 		
 		"""
+
+		ml=IDEARs_funcs()
 
 		colsimport=list(set(list(['eid','age_when_attended_assessment_centre_f21003_0_0',splitvar,disease]+vars)))
 	
@@ -326,9 +347,7 @@ class AnalysisCharts(object):
 	 (df_test['age_when_attended_assessment_centre_f21003_0_0']<=agemax)
 
 		mask_keep=(df_test[splitvar]==0)|(df_test[splitvar]==1)&mask3
-		print(df_test.shape)
 		df_test=df_test[mask_keep]
-		print(df_test.shape)
 
 		df_test['disease']=0
 		mask=pd.notnull(df_test[dis_date])
@@ -351,9 +370,14 @@ class AnalysisCharts(object):
 		varnameslist=[]
 		splitnames=[]
 		comp_groups=[]
+		std_vals=[]
+
+		if len(agegendnormvars)>0:
+			df_test=self.age_gend_norm_mult(df_test,vars)
 
 		
 		for j,v in enumerate(vars):
+
 			for i,t in enumerate(df_test[splitvar][pd.notnull(df_test[splitvar])].unique()):
 
 				#print(i)
@@ -411,11 +435,11 @@ class AnalysisCharts(object):
 					df_test.sort_values(by='dis_stage',inplace=True)
 					ax=sns.boxplot(x=df_test['dis_stage'][mask_use],y=df_test[v][mask_use],
 						order=['No PD','-10 to -5 yrs','-5 to 0 yrs','0 to 5 yrs'],showfliers = False,color='skyblue')
-					plt.xticks(fontsize='24')
-					plt.yticks(fontsize='24')
+					plt.xticks(fontsize='30')
+					plt.yticks(fontsize='30')
 					#plt.ylabel(v, fontsize=24)
-					plt.ylabel('',fontsize='24')
-					plt.xlabel(labels[i]+'s :'+v, fontsize=24)
+					plt.ylabel(self.yaxis_units[v],fontsize='30')
+					plt.xlabel(labels[i]+'s: '+str(ml.mapvar(v)), fontsize='30')
 
 					#whisker locations - find top within group whisker
 					max_val=df_test[v][mask_use].max()
@@ -470,6 +494,8 @@ class AnalysisCharts(object):
 						q_75=df_test[v][mask_use&mask_dis_stage].quantile(0.75)
 						iqr=q_75-q_25
 
+						std_val=round(df_test[v][mask_use&mask_dis_stage].std(),3)
+
 						iqr_pos = q_75+1.5*iqr if (q_75+1.5*iqr)<max_val else max_val
 						iqr_pos_arr.append(iqr_pos)
 						iqr_neg = q_25-1.5*iqr if (q_25-1.5*iqr)>min_val else min_val
@@ -484,34 +510,38 @@ class AnalysisCharts(object):
 						varnameslist.append(v)
 						splitnames.append(i)
 						comp_groups.append(m)
+						std_vals.append(std_val)
 
 					# statistical annotation
 
 
 
 					for k in [1,2,3]:
-						sig='(ns)'
+						sig='ns'
 
 						if pvallist_small[k]<0.001:
-							sig='(***)'
+							sig='***'
 						elif pvallist_small[k]<0.005:
-							sig='(**)'
+							sig='**'
 						elif pvallist_small[k]<0.05:
-							sig='(*)'
+							sig='*'
 						x1, x2 = 0, k   # columns 'Sat' and 'Sun' (first column: 0, see plt.xticks())
 						y, h, col = iqr_pos + (iqr_pos_arr[k]-iqr_neg_arr[k])/5, k*(iqr_pos_arr[k]-iqr_neg_arr[k])/5, 'black'
 						plt.plot([x1, x1, x2, x2], [y, y+h, y+h, y], lw=1.5, c=col)
-						plt.text((x1+x2)*.5, y+h, 'p= '+str(pvallist_small[k])+' '+str(sig), ha='center', va='bottom', color=col,
+						#plt.text((x1+x2)*.5, y+h, 'p= '+str(pvallist_small[k])+' '+str(sig), ha='center', va='bottom', color=col,
+						#	fontsize='24')
+						plt.text((x1+x2)*.5, y+h*0.95, str(sig), ha='center', va='bottom', color=col,
 							fontsize='24')
 
 
 					
 
 		
-		plt.savefig(self.pathfig+'fig4'+"_"+varnames+'.jpg', dpi=300,bbox_inches='tight')
+		plt.savefig(self.pathfig+'fig_211118_'+"_"+varnames+'.jpg', dpi=300,bbox_inches='tight')
 		plt.show()
 		if ttest_use:
-			pvals_df=pd.DataFrame({'var':varnameslist,'split':splitnames,'compgroup':comp_groups,'mean_val':ttestvals,'pvals':pvallist})
+			pvals_df=pd.DataFrame({'var':varnameslist,'split':splitnames,'compgroup':comp_groups,
+				'mean_val':ttestvals,'pvals':pvallist,'std_vals':std_vals})
 			df_test=[df_test,pvals_df]
 
 
