@@ -62,14 +62,21 @@ class IDEARs_funcs(object):
 	parental_ad_status_|birth_weight|parkins|sex_inference|sample_dilut|samesex|mobile_phone|inflammation|frail|\
 	admission_polymorphic|faster_mot|drive_faster_than|time_to_complete_round|Genotype|genetic_principal|employment|Free-text|xxxx' 
 
+		self.wordsremoveAD='inpatient_record|time_to|PD|patient_polymorph|time_since_interview|_HES|records_in_hes|treatment_speciality|\
+	Diag_PD|Age_Diag_Dementia|Age_Diag_|  Parkinson|interviewer|date_of_attending_assessment_centre_f53|years_after_dis|\
+	Frontotemporal|daysto|hospital_recoded|from_hospital|Age_Today|year_of_birth|pollution_|pesticide_exposure|\
+	birth_weight|parkins|sex_inference|sample_dilut|samesex|mobile_phone|inflammation|frail|\
+	admission_polymorphic|faster_mot|drive_faster_than|time_to_complete_round|Genotype|genetic_principal|employment|Free-text|xxxx' 
+
 		self.variablemap=dict({'testosterone_f30850_0_0':'Testosterone',
 		'age_when_attended_assessment_centre_f21003_0_0':'Age at baseline',
 		'parental_pd':'Parent with PD',
-		'neutrophill_percentage_f30200_0_0':'Neutrophill percentage',
+		'neutrophill_percentage_f30200_0_0':'Neutrophill Count',
+		'hdl_cholesterol_f30760_0_0':'HDL Cholesterol',
 		'igf1_f30770_0_0':'IGF1',
 		'suffer_from_nerves_f2010_0_0':'Suffer from nerves',
-		'avg_duration_to_first_press_of_snapbutton_in_each_round':'Average duration to first press of snap button',
-		'neutrophill_lymphocyte_ratio':'Neutrophill to lymphocyte count ratio',
+		'avg_duration_to_first_press_of_snapbutton_in_each_round':'Avg duration to first press - snap button',
+		'neutrophill_lymphocyte_ratio':'Neutrophill:Lymphocyte count ratio',
 		'creactive_protein_f30710_0_0':'C-reactive protein',
 		'Retired':'Retired at baseline',
 		'triglycerides_f30870_0_0':'Triglycerides',
@@ -81,7 +88,7 @@ class IDEARs_funcs(object):
 		'creatinine_f30700_0_0':'Creatine',
 		'vitamin_d_f30890_0_0':'Vitamin D',
 		'platelet_crit_f30090_0_0':'Platelet crit',
-		'number_of_treatmentsmedications_taken_f137_0_0':'Number of treatments or medications',
+		'number_of_treatmentsmedications_taken_f137_0_0':'# of treatments/ medications',
 		'hip_circumference_f49_0_0':'Hip circumference',
 		'usual_walking_pace_f924_0_0':'Usual walking pace',
 		'AST_ALT_ratio':'AST:ALT ratio',
@@ -98,7 +105,7 @@ class IDEARs_funcs(object):
 		'alanine_aminotransferase_f30620_0_0':'Alanine aminotransferase',
 		'hand_grip_strength_right_f47_0_0':'Hand grip strength (right)',
 		'ldl_direct_f30780_0_0':'LDL Direct',
-		'neutrophill_count_f30140_0_0':'Neutrophil Count',
+		'neutrophill_count_f30140_0_0':'Neutrophill Count',
 		'number_of_selfreported_noncancer_illnesses_f135_0_0':'Number of self reported non cancer illnesses',
 		'urate_f30880_0_0':'Urate',
 		'coffee_intake_f1498_0_0':'Coffee Intake',
@@ -112,10 +119,15 @@ class IDEARs_funcs(object):
 		'non_ost':'Non-steroidal anti-inflammatories',
 		'non_ost_non_asp':'Non-steroidal anti-inflammatories excluding aspirin',
 		'smoking_status_f20116_0_0':'Smoking',
-		'urban_rural':'Urban Rural Score'}) 
+		'urban_rural':'Urban Rural Score',
+		'taking_other_prescription_medications_f2492_0_0':'Taking other prescription medications',
+		'inverse_distance_to_the_nearest_major_road_f24012_0_0':'Inverse distance to nearest main road',
+		'mean_time_to_correctly_identify_matches_f20023_0_0':'Mean time to correctly identify matches',
+		'nervous_feelings_f1970_0_0':'Nervous feelings',
+		'phosphate_f30810_0_0':'Phosphate'}) 
 
  
-		self.variablemap_group=dict({'testosterone_f30850_0_0':'Other',
+		self.variablemap_group=dict({'testosterone_f30850_0_0':'Blood Biomarkers',
 		'age_when_attended_assessment_centre_f21003_0_0':'Demographic',
 		'parental_pd':'Demographic',
 		'neutrophill_percentage_f30200_0_0':'Inflammation',
@@ -546,6 +558,29 @@ class IDEARs_funcs(object):
 
 		return mod
 
+	def train_eval(self,df_train,df_test,model,dropcols,depvar,wordsremove,resizeratio=20,shapshow=1):
+		
+		df_out=self.preprocess(df_train,dropcols,depvar,wordsremove,resizeratio)
+		df_out_test=self.preprocess(df_test,dropcols,depvar,wordsremove,resizeratio)
+		
+		X=df_out.drop(columns=['eid',depvar])
+		y=df_out[depvar]
+		 
+		mod=model.fit(X,y) 
+
+		X_test=df_out_test.drop(columns=['eid',depvar])
+		y_test=df_out_test[depvar]
+
+		df_out_test['risk']=mod.predict_proba(X_test)[:, 1]
+		df_out_test['y_pred']=mod.predict(X_test)
+		df_out_test['y_test']=y_test.tolist() 
+
+		fpr, tpr, _ = roc_curve(df_out_test['y_test'],df_out_test['risk'])
+		mean_auc=auc(fpr, tpr)
+		
+
+		return mean_auc
+
 	def simple_eval(self,df,model,dropcols,depvar,wordsremove,resize,resizeratio,shapshow=1):
 		
 		df_out=self.preprocess(df,dropcols,depvar,wordsremove,resize,resizeratio)
@@ -617,7 +652,7 @@ class IDEARs_funcs(object):
 	
 		
 		
-	def ABS_SHAP(self,df_shap,df,max_disp=20,figx=10,figy=10,dpi=200,figname='shap_bar',format_file='.jpg'):
+	def ABS_SHAP(self,df_shap,df,max_disp=20,figx=10,figy=10,dpi=200,plot=True,figname='shap_bar',format_file='.jpg'):
 
 		"""
 		SHAP bar with colours for directions
@@ -650,23 +685,25 @@ class IDEARs_funcs(object):
 
 		k3=k2.tail(max_disp)
 		colorlist = k3['Sign']
-		
-		figure(figsize=(figx, figy), dpi=dpi)
-		matplotlib.rc('xtick', labelsize=20) 
-		matplotlib.rc('ytick', labelsize=20)
-		
-		ax = k3.plot.barh(x='Variable',y='SHAP_abs',color = colorlist,legend=False,figsize=(figx, figy))
-		ax.set_xlabel("SHAP Value (Red = Positive Impact)")
-		ax.xaxis.label.set_visible(False)
-		ax.yaxis.label.set_visible(False)
 
+		if plot:
 		
-		for i, v in enumerate(list(k3['SHAP_abs'])):
-			ax.text(v + 0.01, i, str(round(v,4)), color='black', fontweight='bold', fontsize=14, ha='left', va='center')
+			figure(figsize=(figx, figy), dpi=dpi)
+			matplotlib.rc('xtick', labelsize=20) 
+			matplotlib.rc('ytick', labelsize=20)
+			
+			ax = k3.plot.barh(x='Variable',y='SHAP_abs',color = colorlist,legend=False,figsize=(figx, figy))
+			ax.set_xlabel("SHAP Value (Red = Positive Impact)")
+			ax.xaxis.label.set_visible(False)
+			ax.yaxis.label.set_visible(False)
+
+			
+			for i, v in enumerate(list(k3['SHAP_abs'])):
+				ax.text(v + 0.01, i, str(round(v,4)), color='black', fontweight='bold', fontsize=14, ha='left', va='center')
 
 
-		plt.savefig(self.path_figures+figname+format_file, dpi=300,bbox_inches='tight')
-		plt.show()
+			plt.savefig(self.path_figures+figname+format_file, dpi=300,bbox_inches='tight')
+			plt.show()
 
 		return k2
 
@@ -694,19 +731,29 @@ class IDEARs_funcs(object):
 		plt.savefig(self.path_figures+figname+format_file, dpi=300,bbox_inches='tight')
 		plt.show()
 
-	def boxplot_shap(self,df,meanshapmin=0.025,minrecs=19,lab='all',figprint=False,figname='SHAP',format_file='.jpg'):
+	def boxplot_shap(self,df,meanshapmin=0.025,minrecs=19,lab='all',figprint=False,figname='SHAP',format_file='.jpg',rank=25,list=True):
 		figure(figsize=(10, 20), dpi=200)
 		df=df.copy()
-		df=pd.concat(df,axis=0)
+
+		if list:
+			df=pd.concat(df,axis=0)
 		
 		df['recs']=df.groupby('Variable')['SHAP_abs'].transform('count')
 		df=df[(df['recs']>minrecs)]
 
 		df['Variable'][(df['Variable']=='Lymphocte count')]='Lymphocyte count'
 		
-		df['mean_shap']=df.groupby('Variable')['SHAP_abs'].transform('mean')
+		#df['mean_shap']=
 		df['mean_corr']=df.groupby('Variable')['Corr'].transform('mean')
-		df=df[(df['mean_shap']>=meanshapmin)]
+		df=df[(df.groupby('Variable')['SHAP_abs'].transform('mean')>=meanshapmin)]
+
+		#df['mean_shap']=df.groupby('Variable')['SHAP_abs'].transform('mean')
+		#df['rank']=df.groupby('Variable')['mean_shap'].rank()
+		df_sum=pd.DataFrame(df.groupby('Variable')['SHAP_abs'].mean()).reset_index()
+		df_sum.columns=['Variable','mean_shap']
+		df_sum['rank']=df_sum['mean_shap'].rank(ascending=False)
+		df=pd.merge(df,df_sum,on='Variable',how='left')
+
 		df['Sign']=df['mean_corr'].apply(lambda x:'r' if x>0 else 'b')
 		df['Variable']=df['Variable'].apply(self.mapvar)
 		df.sort_values(by='mean_shap',ascending=False,inplace=True)
@@ -716,7 +763,10 @@ class IDEARs_funcs(object):
 		pal = {var: dic[var] for var in df['Variable'].unique()}
 		
 		colorlist = df['Sign']
-		ax=sns.boxplot(data=df,y='Variable',x='SHAP_abs',palette=pal)
+
+		matplotlib.rc('xtick', labelsize=20) 
+		matplotlib.rc('ytick', labelsize=30)
+		ax=sns.boxplot(data=df,y='Variable',x='SHAP_abs',palette=pal) #df[(df['rank']<=rank)]
 		ax.xaxis.label.set_visible(False)
 		ax.yaxis.label.set_visible(False)
 		if figprint:
@@ -724,8 +774,8 @@ class IDEARs_funcs(object):
 		
 		plt.show()
 		
-		df_out=pd.DataFrame(df.groupby('Variable').agg({'SHAP_abs':'mean','Corr':'mean'})).reset_index()
-		df_out.columns=['Variable','shap_abs'+lab,'Corr'+lab]
+		df_out=pd.DataFrame(df.groupby('Variable').agg({'SHAP_abs':'mean','Corr':'mean','rank':'mean'})).reset_index()
+		df_out.columns=['Variable','shap_abs'+lab,'Corr'+lab,'rank'+lab]
 		
 		
 		
@@ -743,21 +793,27 @@ class IDEARs_funcs(object):
 
 			self.ABS_SHAP(sv, df,25,figx=15,figy=15,figname=figname+' '+str(v))
 
-	def run_entire_data_pd(self,df,drops,wordsremove,outfile,savefile=True,save_featslist=False,runs=5,holdout_ratio=0.2):
+	def run_entire_data_pd(self,df,drops,wordsremove,outfile,savefile=False,
+		save_featslist=True,runs=5,holdout_ratio=0.2,depvar='PD',agemin=50,agemax=70,resizeratio=20,verbose=False):
 
 		shap_values_list=[]
 		X_list=[]
 		df_out_list=[]
 
 		for i in range(runs):
-			print(i)
-			df_train,df_val=self.holdout_data(df=df,agemin=50,agemax=70,depvar='PD',holdout_ratio=0.2)
+			if verbose:
+				print(i)
+			df_train,df_val=self.holdout_data(df=df,agemin=agemin,agemax=agemax,depvar=depvar,holdout_ratio=holdout_ratio)
 			mod1=self.simpletrain(df=df_train,model=self.model(),dropcols=drops,
-				wordsremove=wordsremove,depvar='PD',resizeratio=100,shapshow=0)
+				wordsremove=wordsremove,depvar=depvar,resizeratio=resizeratio,shapshow=0)
+			if verbose:
+				print("trained")
 			shap_values, X, df_out=self.simple_eval(df=df_val,model=mod1,dropcols=drops,
-				wordsremove=wordsremove,depvar='PD',resize=0,resizeratio=20,
+				wordsremove=wordsremove,depvar=depvar,resize=1,resizeratio=resizeratio,
 			shapshow=1)
 
+			if verbose:
+				print("shap done")
 			shap_values_list.append(shap_values)
 			X_list.append(X)
 			df_out_list.append(df_out)
@@ -772,7 +828,47 @@ class IDEARs_funcs(object):
 		if save_featslist:
 			feats_all=self.shapgraphs_tuple(shap_tuple,max_disp=20,figname=outfile)
 			feats_all.to_parquet(self.path+outfile+'.parquet')
+		if verbose:
+			print('completed run entire data')
+		return shap_tuple
 
+	def run_entire_data(self,df,drops,wordsremove,outfile,savefile=False,
+		save_featslist=True,runs=5,holdout_ratio=0.2,depvar='PD',agemin=50,agemax=70,resizeratio=20,verbose=False):
+
+		#shap_values_list=[]
+		X_list=[]
+		df_out_list=[]
+
+		for i in range(runs):
+			if verbose:
+				print(i)
+			df_train,df_val=self.holdout_data(df=df,agemin=agemin,agemax=agemax,depvar=depvar,holdout_ratio=holdout_ratio)
+			mod1=self.simpletrain(df=df_train,model=self.model(),dropcols=drops,
+				wordsremove=wordsremove,depvar=depvar,resizeratio=resizeratio,shapshow=0)
+			if verbose:
+				print("trained")
+			shap_values, X, df_out=self.simple_eval(df=df_val,model=mod1,dropcols=drops,
+				wordsremove=wordsremove,depvar=depvar,resize=1,resizeratio=resizeratio,
+			shapshow=1)
+
+			if verbose:
+				print("shap done")
+			shap_values_list.append(shap_values)
+			X_list.append(X)
+			df_out_list.append(df_out)
+
+		shap_tuple=[shap_values_list,X_list,df_out_list]
+
+		if savefile:
+			shap_tuple_file=open(self.path+outfile,'wb')
+			pickle.dump(shap_tuple,shap_tuple_file)
+			shap_tuple_file.close()
+
+		if save_featslist:
+			feats_all=self.shapgraphs_tuple(shap_tuple,max_disp=20,figname=outfile)
+			feats_all.to_parquet(self.path+outfile+'.parquet')
+		if verbose:
+			print('completed run entire data')
 		return shap_tuple
 
 	def run_entire_data_dem(self,df,drops,wordsremove,runs=5,outfile='shap_tuple_dem.pkl'):
@@ -802,21 +898,21 @@ class IDEARs_funcs(object):
 
 		return shap_tuple
 
-	def shapgraphs_tuple(self,tuple,max_disp=20,figname='shap_chart_for..'):
+	def shapgraphs_tuple(self,tuple,max_disp=20,figname='shap_chart_for..',plot=True):
 		df=pd.concat(tuple[1],axis=0)
 		df.columns=[self.mapvar(c) for c in df.columns]
 
-		print(df.shape)
+		#print(df.shape)
 		df_shap=np.vstack(tuple[0])
-		print(df_shap.shape)
-		outs=self.ABS_SHAP(df_shap,df,max_disp=max_disp,figx=10,figy=15,dpi=200,figname=figname)
+		#print(df_shap.shape)
+		outs=self.ABS_SHAP(df_shap,df,max_disp=max_disp,figx=10,figy=15,dpi=200,figname=figname,plot=plot)
 		return outs
 
 	def ROCAUC_tuples(self,df_out_list,labels,cols,figname='ROCAUC for..',format_out='.svg'):
 		dfs=[pd.concat(df_out_list[i],axis=0) for i in range(len(df_out_list))]
 		y_tests=[dfs[i]['y_test'] for i in range(len(df_out_list))]
 		risks=[dfs[i]['risk'] for i in range(len(df_out_list))]
-		self.plot_ROCAUC_mult(y_tests,risks,labels,cols,figname=figname,format_out=format_out)
+		aucs=self.plot_ROCAUC_mult(y_tests,risks,labels,cols,figname=figname,format_out=format_out)
 
 		return aucs
 
@@ -892,23 +988,26 @@ class IDEARs_funcs(object):
 		pval_inc=ttest_vals[1]
 
 		if pval_inc<0.001:
-			sig='(***)'
+			sig='***'
 		elif pval_inc<0.005:
-			sig='(**)'
+			sig='**'
 		elif pval_inc<0.05:
-			sig='(*)'
+			sig='*'
 
 
 		x1, x2 = 0, 1   # columns 'Sat' and 'Sun' (first column: 0, see plt.xticks())
 		y=0.77
 		h=0.01
-		plt.ylim(0.65,0.85)
+		plt.ylim(0.65,0.8)
+		plt.ylabel('AUC', fontsize=20)
+		plt.xlabel('', fontsize=20)
 		plt.plot([x1, x1, x2, x2], [y, y+h, y+h, y], lw=1.5, c='black')
-		plt.text((x1+x2)*.5, y+h, 'p= '+'{:0.3e}'.format(pval_inc)+' '+str(sig), ha='center', va='bottom', color='black',
-			fontsize='18')
+		#plt.text((x1+x2)*.5, y+h, 'p= '+'{:0.3e}'.format(pval_inc)+' '+str(sig), ha='center', va='bottom', color='black',
+		plt.text((x1+x2)*.5, y+h, str(sig), ha='center', va='bottom', color='black',\
+	fontsize='18')	
 
 		
-		plt.savefig(self.path_figures+'fig AUC Boxplot: '+"_"+figname+'.jpg', dpi=300,bbox_inches='tight')
+		plt.savefig(self.path_figures+'fig AUC Boxplot: '+"_"+figname+'.jpg', dpi=300,bbox_inches='tight',transparent=True)
 		plt.show()
 
 		return df_out

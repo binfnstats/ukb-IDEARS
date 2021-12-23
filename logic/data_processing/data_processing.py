@@ -18,6 +18,7 @@ import icd10
 import datetime as dt
 import ast
 from sklearn.preprocessing import StandardScaler
+from pandas.tseries.offsets import DateOffset
 
 class data_proc_main(object):
 	"""
@@ -256,8 +257,25 @@ class data_proc_main(object):
 
 	def specific_disease_label(self,icd10s,disname):
 		df_dis_date=pd.read_parquet(self.path+'df_dis_date_test.parquet')
-		dis_label=pd.DataFrame(df_dis_date[(df_dis_date['disease'].isin(icd10s))].\
+		mask_icd=(df_dis_date['disease'].isin(icd10s))
+		
+		dis_label1=pd.DataFrame(df_dis_date[mask_icd].\
 	groupby('eid').agg({'dis_aft':'max','disease_date':'min'})).reset_index()
+
+		dis_label1[disname]=1
+
+		dis_label1=dis_label1[['eid',disname,'disease_date']]
+
+
+		dis_label2=pd.DataFrame(df_dis_date[mask_icd].\
+	groupby('eid').agg({'dis_bef':'max','disease_date':'min'})).reset_index()
+
+		dis_label2[disname]=-1
+
+		dis_label2=dis_label2[['eid',disname,'disease_date']]
+
+		dis_label=pd.concat([dis_label1,dis_label2],axis=0)
+
 
 		return dis_label
 
@@ -322,6 +340,9 @@ class data_proc_main(object):
 		df_dis_date.rename(columns={'date_of_attending_assessment_centre_f53_0_0':'date_assess','dis_date':'disease_date'}\
 	,inplace=True)
 
+
+	
+
 		#create dummie variables for diseases if before assessment centre (dis_bef) for indep vars and if after 2 years/
 		#before 10 years (mask_aft) for dep variable
 		mask_bef=(df_dis_date['disease_date']<df_dis_date['date_assess'])
@@ -344,7 +365,8 @@ class data_proc_main(object):
 		df_dis_date['total_bef']=df_dis_date.groupby('disease')['dis_bef'].transform('sum')
 		df_dis_date['total_aft']=df_dis_date.groupby('disease')['dis_aft'].transform('sum')
 
-	
+		df_dis_date.to_parquet(self.path+'df_dis_date_test2.parquet')
+
 		#mapping of certain diseases by their codes in dis_map above
 		for var in self.dis_map:
 			df_dis_date[var]=0
@@ -379,11 +401,28 @@ class data_proc_main(object):
 		dis_ohe_icd10.fillna(0,inplace=True)
 
 		#output files
-		df_dis_date.to_parquet(self.path+'df_dis_date_test.parquet')
+		#df_dis_date.to_parquet(self.path+'df_dis_date_test.parquet')
 		dis_ohe_icd10.to_parquet(self.path+'dis_ohe_icd10_test.parquet')
 
 
 		return df_dis_date,dis_ohe_icd10
+
+	def disease_labels_ICD10s(self,icd10s=['G309', 'G308', 'G300', 'G301'],disease='AD',out='test.parquet'):
+
+		df_dis_date_test=pd.read_parquet(self.path+'df_dis_date_test2.parquet')
+		
+		dis_lab=df_dis_date_test[(df_dis_date_test['disease'].isin(icd10s))]
+		dis_lab=pd.DataFrame(dis_lab.groupby('eid')['disease_date','date_assess'].min()).reset_index()
+		mask=(dis_lab['disease_date']>dis_lab['date_assess']+ DateOffset(years=2))
+		dis_lab['time_to_'+disease]=(dis_lab['disease_date']-dis_lab['date_assess']).dt.days/365.25
+		dis_lab[disease]=-1
+		dis_lab[disease][mask]=1
+
+		dis_lab.rename(columns={'disease_date':disease+'_date'},inplace=True)
+
+		dis_lab.to_parquet(self.path+out)
+
+		return dis_lab
 
 	def famhistory(self):
 
@@ -641,6 +680,67 @@ class data_proc_main(object):
 
 		return df_model,excluded_vars
 
+	def data_merge_dis(self,remwords='alzhei|dementia',disease='AD',icd10s=['G309', 'G308', 'G300', 'G301'],outfile=None,use_icd10=True):
+
+		df_lab=self.disease_labels_ICD10s(icd10s=icd10s,disease=disease)
+
+
+		df_model=pd.read_parquet(self.path+'df_model.parquet')
+		ukb_treatments=pd.read_parquet(self.path+'treatments_test.parquet')
+		dis_ohe=pd.read_parquet(self.path+'dis_ohe_test.parquet')
+		dis_ohe_icd10=pd.read_parquet(self.path+'dis_ohe_icd10_test.parquet')
+		df_fam_pddem=pd.read_parquet(self.path+'df_fam_pddem.parquet')
+		deaths=pd.read_parquet(self.path+'deaths_test.parquet')
+
+		apoe4_df=pd.read_parquet(self.path+'genotype.parquet')
+		apoe4_df=apoe4_df[pd.notnull(apoe4_df['Genotype'])]
+		apoe4_df=self.onehotencoder(apoe4_df,['Genotype'],[],maxrecs=10,mincount=0.1,incspec=False)[0]
+
+		deaths=deaths[(deaths['date_of_death_f40000_0_0']!='nan')]
+		deaths['date_of_death_f40000_0_0']=pd.to_datetime(deaths['date_of_death_f40000_0_0'])
+
+		for i,df in enumerate([df_lab,dis_ohe,dis_ohe_icd10,deaths,df_model,ukb_treatments,apoe4_df,df_fam_pddem]):
+			df['eid']=df['eid'].astype(str)
+
+		#deaths not of the condition - we will include deaths from the condition
+		#where condition was developed prior to 2 year interval
+
+		df=pd.merge(df_model,ukb_treatments,on='eid',how='left')
+		df=pd.merge(df,apoe4_df,on='eid',how='left')
+		df=pd.merge(df,df_fam_pddem,on='eid',how='left')
+		df=pd.merge(df,df_lab[['eid',disease,'time_to_'+disease]],on='eid',how='left')
+
+		if use_icd10:
+			df=pd.merge(df,dis_ohe_icd10,on='eid',how='inner')
+		else:
+			df=pd.merge(df,dis_ohe,on='eid',how='inner')
+
+
+
+		nondis_deaths=list(deaths['eid'][~(deaths['eid'].isin(df_lab['eid']))])
+		dis_befores=list(df_lab['eid'][(df_lab[disease]==-1)])
+
+		eid_excludes=list(set(nondis_deaths+dis_befores))
+
+		col_includes=list(c for c in df.columns if not re.search(remwords,c) or c==disease)
+
+		df[disease].fillna(0,inplace=True)
+
+		df=df[~(df['eid'].isin(eid_excludes))]
+
+		df=df[col_includes]
+
+		if outfile:
+			df.to_parquet(self.path+outfile)
+
+		return df
+
+
+
+
+
+
+
 	def data_merge(self,use_icd10=True):
 
 
@@ -763,6 +863,17 @@ class data_proc_main(object):
 			df=pd.read_parquet(self.path+'df_dem_20210924.parquet')
 			mask=(df['PD']==1)
 			df=df[~mask]
+
+		if depvar=="AD":
+			#df=pd.read_parquet(self.path+'df_ad_20211024.parquet')
+			df=pd.read_parquet(self.path+'df_ad_20211214.parquet')
+
+			if 'PD' in df.columns:
+				mask=(df['PD']==1)
+				df=df[~mask]
+
+
+			
 
 		elif depvar=="PD":
 			PD_spec=pd.read_parquet('%s%s' % (self.path,'PD_specific.parquet'))
@@ -904,6 +1015,16 @@ class data_proc_main(object):
 			df_lancet.to_parquet(self.path+'df_dem_lancet_Oct.parquet')
 			df_study.to_parquet(self.path+'df_dem_frailty_study_Oct.parquet')
 			df.to_parquet(self.path+'df_dem_final.parquet')
+
+			df_tuple=[df,df_study,df_lancet]
+
+		if depvar=="AD":
+
+			df_study=df[[c for c in studycols_dem if 'dementia' not in c]+['AD']]
+			df_lancet=df[[c for c in cols_lancet if 'dementia' not in c]+['AD']]
+			df_lancet.to_parquet(self.path+'df_AD_lancet_Oct.parquet')
+			df_study.to_parquet(self.path+'df_AD_frailty_study_Oct.parquet')
+			df.to_parquet(self.path+'df_AD_final.parquet')
 
 			df_tuple=[df,df_study,df_lancet]
 

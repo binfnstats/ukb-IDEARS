@@ -46,15 +46,15 @@ class AnalysisCharts(object):
 			'AST_ALT_ratio':'AST:ALT ratio',
 			'neutrophill_count_f30140_0_0':'10^9 cells/Litre','lymphocyte_count_f30120_0_0':'10^9 cells/Litre',
 			'neutrophill_lymphocyte_ratio':'Ratio',
-         'creactive_protein_f30710_0_0':'mg/L','ibuprofen':'Percentage taking Ibuprofen',
-         'cholesterol_f30690_0_0':'mmol/l','hdl_cholesterol_f30760_0_0':'mmol/l',
-         'waist_circumference_f48_0_0':'cm','ldl_direct_f30780_0_0':'mmol/L',
-         'Total ICD10 Conditions at baseline':'Number of conditions',
-         'number_of_treatmentsmedications_taken_f137_0_0':'Number of treatments/ medications',
-         'hand_grip_strength_left_f46_0_0':'Kg', 'hand_grip_strength_right_f47_0_0':'Kg',
-         'usual_walking_pace_f924_0_0':'Interview speed',
-           'forced_vital_capacity_fvc_f3062_0_0':'Litres',
-           'glycated_haemoglobin_hba1c_f30750_0_0':'nmol/L'})
+		 'creactive_protein_f30710_0_0':'mg/L','ibuprofen':'Percentage taking Ibuprofen',
+		 'cholesterol_f30690_0_0':'mmol/l','hdl_cholesterol_f30760_0_0':'mmol/l',
+		 'waist_circumference_f48_0_0':'cm','ldl_direct_f30780_0_0':'mmol/L',
+		 'Total ICD10 Conditions at baseline':'',
+		 'number_of_treatmentsmedications_taken_f137_0_0':'',
+		 'hand_grip_strength_left_f46_0_0':'Kg', 'hand_grip_strength_right_f47_0_0':'Kg',
+		 'usual_walking_pace_f924_0_0':'Interview speed',
+		   'forced_vital_capacity_fvc_f3062_0_0':'Litres',
+		   'glycated_haemoglobin_hba1c_f30750_0_0':'nmol/L'})
 		
 
 
@@ -221,11 +221,12 @@ class AnalysisCharts(object):
 		plt.yticks(fontsize='24')
 		plt.xlabel(xlabel, fontsize=24)
 		plt.ylabel(ylabel, fontsize=24)
-		
-		if pval<0.01:
-			symb="**"
+		if pval<0.001:
+			symb="(***)"
+		elif pval<0.01:
+			symb="(**)"
 		elif pval<0.05:
-			symb="*"
+			symb="(*)"
 		else:
 			symb=" (ns)"
 		if round(pval,4)==0:
@@ -235,10 +236,10 @@ class AnalysisCharts(object):
 			
 		
 			
-		plt.text(0.5,0.8,'slope ratio: '+str("{:.0%}".format(round(slope_diff,5))),horizontalalignment='center',
+		plt.text(0.5,0.8,'slope ratio: '+str("{:.0%}".format(round(slope_diff,5))+' '+str(symb)),horizontalalignment='center',
 				verticalalignment='center', transform = ax.transAxes, fontsize='24')
-		plt.text(0.5,0.7,'(p = '+valsymb+symb+')',horizontalalignment='center',
-				verticalalignment='center', transform = ax.transAxes, fontsize='24')
+		#plt.text(0.5,0.7,'(p = '+valsymb+symb+')',horizontalalignment='center',
+		#		verticalalignment='center', transform = ax.transAxes, fontsize='24')
 		plt.savefig(self.path+'fig3'+"_"+var+'.svg', dpi=300)
 		plt.show()
 
@@ -315,15 +316,27 @@ class AnalysisCharts(object):
 
 		return sum_df
 
-	def ttest(self,df,bdown,var):
+	def death_exclusions(self,df,disease):
+
+		
+		death=pd.read_parquet(self.path+'deaths_test.parquet')
+		death=death[(death['date_of_death_f40000_0_0']!='nan')]
+		death['date_of_death_f40000_0_0']=pd.to_datetime(death['date_of_death_f40000_0_0'])
+
+		nondis_deaths=list(death['eid'][~(death['eid'].isin(df['eid'][(df[disease]==1)]))])
+
+		return nondis_deaths
+
+
+	def ttest(self,df,bdown,var,disease='PD'):
 		ttest_vals=stats.ttest_ind(df[(df['dis_stage']==bdown)][var], 
-				   df[(df['dis_stage']=='No PD')][var])
+				   df[(df['dis_stage']=='No '+disease)][var])
 		
 		return ttest_vals
 
-	def disease_traj(self,dis_date='parkins_date',disease='PD',vars=['igf1_f30770_0_0'],
+	def disease_traj(self,labelfile='labels_dates_test.parquet',dis_date='parkins_date',disease='PD',vars=['igf1_f30770_0_0'],
 	splitvar='sex_f31_0_0',agemin=50,agemax=70,labels=['Female','Male'],varnames='IGF1',plots='lineplots',ttest_use=False,
-	agegendnormvars=[]):
+	agegendnormvars=[],exc_deaths=False,dis_label=True):
 
 		"""
 		Brings in the full data and disease date so we can model variables averages across trajectory of patient journey
@@ -332,11 +345,22 @@ class AnalysisCharts(object):
 
 		ml=IDEARs_funcs()
 
-		colsimport=list(set(list(['eid','age_when_attended_assessment_centre_f21003_0_0',splitvar,disease]+vars)))
+		if dis_label:
+			colsimport=list(set(list(['eid','age_when_attended_assessment_centre_f21003_0_0',splitvar,disease]+vars)))
+		else:
+			colsimport=list(set(list(['eid','age_when_attended_assessment_centre_f21003_0_0',splitvar]+vars)))
+
 	
 		df_model=pd.read_parquet(self.path+'df_all_final.parquet',columns=colsimport)
-		df_dates=pd.read_parquet(self.path+'labels_dates_test.parquet')[['eid',dis_date]]
+
+		if dis_label:
+			labelcols=['eid',dis_date]
+		else:
+			labelcols=['eid',dis_date,disease]
+		df_dates=pd.read_parquet(self.path+labelfile)[labelcols]
 		df_model_orig=pd.read_parquet(self.path+'df_model_test.parquet')[['eid','date_of_attending_assessment_centre_f53_0_0']]
+
+
 
 		df_dates['eid']=df_dates['eid'].astype(str)
 		df_model['eid']=df_model['eid'].astype(str)
@@ -346,12 +370,22 @@ class AnalysisCharts(object):
 		mask3=(df_test['age_when_attended_assessment_centre_f21003_0_0']>=agemin)&\
 	 (df_test['age_when_attended_assessment_centre_f21003_0_0']<=agemax)
 
+		df_test[disease].fillna(0,inplace=True)
+		
 		mask_keep=(df_test[splitvar]==0)|(df_test[splitvar]==1)&mask3
 		df_test=df_test[mask_keep]
+
+		if exc_deaths:
+			excs=self.death_exclusions(df_test,disease)
+			mask=(~df_test['eid'].isin(excs))
+			df_test=df_test[mask]
+
 
 		df_test['disease']=0
 		mask=pd.notnull(df_test[dis_date])
 		df_test['disease'][mask]=1
+
+		
 
 		df_test['date_of_attending_assessment_centre_f53_0_0']=\
 	pd.to_datetime(df_test['date_of_attending_assessment_centre_f53_0_0'])
@@ -363,7 +397,7 @@ class AnalysisCharts(object):
 		k=len(vars)
 
 		fig = plt.figure(figsize=(15*k, 10*k))
-		grid = plt.GridSpec(k, k, hspace=0.3, wspace=0.3)
+		grid = plt.GridSpec(k, k, hspace=0.45, wspace=0.3)
 
 		ttestvals=[]
 		pvallist=[]
@@ -392,18 +426,18 @@ class AnalysisCharts(object):
 				ax=fig.add_subplot(grid[j, i])
 				avg=df_test[mask&mask3&mask_split][v].mean()
 
-				mask_12=(df_test['years_PD']<-5)&(df_test['years_PD']>-10)
-				mask_5=(df_test['years_PD']<-0)&(df_test['years_PD']>=-5)
-				mask_05=(df_test['years_PD']<5)&(df_test['years_PD']>=0)
-				mask_no_pd=(pd.isnull(df_test['years_PD']))&(df_test['PD']==0)
+				mask_12=(df_test['years_'+disease]<-5)&(df_test['years_'+disease]>-10)
+				mask_5=(df_test['years_'+disease]<-0)&(df_test['years_'+disease]>=-5)
+				mask_05=(df_test['years_'+disease]<5)&(df_test['years_'+disease]>=0)
+				mask_no_pd=(pd.isnull(df_test['years_'+disease]))&(df_test[disease]==0)
 
 
 				mask_v=(df_test[v]<df_test[v].quantile(0.95))&(df_test[v]>=df_test[v].quantile(0.05))
 				df_test['dis_stage']=np.nan
-				df_test['dis_stage'][mask_12]='-10 to -5 yrs'#"2: 5-10 years pre diag"
-				df_test['dis_stage'][mask_5]='-5 to 0 yrs'#"3: 0-5 years pre diag"
-				df_test['dis_stage'][mask_05]='0 to 5 yrs'#"4: 0-5 years post diag"
-				df_test['dis_stage'][mask_no_pd]='No PD'#"1: No PD"
+				df_test['dis_stage'][mask_12]='-10>-5'#"2: 5-10 years pre diag"
+				df_test['dis_stage'][mask_5]='-5>0'#"3: 0-5 years pre diag"
+				df_test['dis_stage'][mask_05]='0>5'#"4: 0-5 years post diag"
+				df_test['dis_stage'][mask_no_pd]='No '+disease#"1: No PD"
 
 				if plots=='lineplots':
 
@@ -418,7 +452,7 @@ class AnalysisCharts(object):
 				df_test[mask2&mask3&mask_split][v].quantile(0.05)
 
 
-					plt.text(0,max(0,avg+range_vals/100),labels[i]+' levels for non PD',fontsize=24)
+					plt.text(0,max(0,avg+range_vals/100),labels[i]+' levels for non '+disease,fontsize=24)
 					plt.title=str(v) + str(labels[i])
 
 					plt.xticks(fontsize='24')
@@ -434,12 +468,14 @@ class AnalysisCharts(object):
 					mask_use=mask2&mask3&mask_split
 					df_test.sort_values(by='dis_stage',inplace=True)
 					ax=sns.boxplot(x=df_test['dis_stage'][mask_use],y=df_test[v][mask_use],
-						order=['No PD','-10 to -5 yrs','-5 to 0 yrs','0 to 5 yrs'],showfliers = False,color='skyblue')
-					plt.xticks(fontsize='30')
-					plt.yticks(fontsize='30')
+						order=['No '+disease,'-10>-5','-5>0','0>5'],showfliers = False,color='skyblue')
+					plt.xticks(fontsize='35')
+					plt.yticks(fontsize='35')
 					#plt.ylabel(v, fontsize=24)
 					plt.ylabel(self.yaxis_units[v],fontsize='30')
-					plt.xlabel(labels[i]+'s: '+str(ml.mapvar(v)), fontsize='30')
+					plt.xlabel(labels[i]+'s: '+str(ml.mapvar(v)), fontsize='35')
+					plt.xlabel('Years of '+disease)
+					plt.title(labels[i]+'s: '+str(ml.mapvar(v)), fontsize='35')
 
 					#whisker locations - find top within group whisker
 					max_val=df_test[v][mask_use].max()
@@ -476,14 +512,14 @@ class AnalysisCharts(object):
 					mask_use=mask2&mask3&mask_split&mask_v
 
 					#compgroups=list(['1: No PD','2: 5-10 years pre diag','3: 0-5 years pre diag','4: 0-5 years post diag'])
-					compgroups=list(['No PD','-10 to -5 yrs','-5 to 0 yrs','0 to 5 yrs'])
+					compgroups=list(['No PD','-10>-5','-5>0','0>5'])
 				   
 					iqr_pos_arr=[]
 					iqr_neg_arr=[]
 					pvallist_small=[]
 					for q,m in enumerate(compgroups):
 
-						ttest_vals=self.ttest(df_test[mask_use],m,v)
+						ttest_vals=self.ttest(df_test[mask_use],m,v,disease=disease)
 
 
 						mask_dis_stage=(df_test['dis_stage']==m)
@@ -517,7 +553,7 @@ class AnalysisCharts(object):
 
 
 					for k in [1,2,3]:
-						sig='ns'
+						sig=''
 
 						if pvallist_small[k]<0.001:
 							sig='***'
@@ -525,13 +561,15 @@ class AnalysisCharts(object):
 							sig='**'
 						elif pvallist_small[k]<0.05:
 							sig='*'
-						x1, x2 = 0, k   # columns 'Sat' and 'Sun' (first column: 0, see plt.xticks())
-						y, h, col = iqr_pos + (iqr_pos_arr[k]-iqr_neg_arr[k])/5, k*(iqr_pos_arr[k]-iqr_neg_arr[k])/5, 'black'
-						plt.plot([x1, x1, x2, x2], [y, y+h, y+h, y], lw=1.5, c=col)
-						#plt.text((x1+x2)*.5, y+h, 'p= '+str(pvallist_small[k])+' '+str(sig), ha='center', va='bottom', color=col,
-						#	fontsize='24')
-						plt.text((x1+x2)*.5, y+h*0.95, str(sig), ha='center', va='bottom', color=col,
-							fontsize='24')
+
+						if sig !='':
+							x1, x2 = 0, k   # columns 'Sat' and 'Sun' (first column: 0, see plt.xticks())
+							y, h, col = iqr_pos + (iqr_pos_arr[k]-iqr_neg_arr[k])/5, k*(iqr_pos_arr[k]-iqr_neg_arr[k])/5, 'black'
+							plt.plot([x1, x1, x2, x2], [y, y+h, y+h, y], lw=1.5, c=col)
+							#plt.text((x1+x2)*.5, y+h, 'p= '+str(pvallist_small[k])+' '+str(sig), ha='center', va='bottom', color=col,
+							#	fontsize='24')
+							plt.text((x1+x2)*.5, y+h*0.95, str(sig), ha='center', va='bottom', color=col,
+								fontsize='24')
 
 
 					
