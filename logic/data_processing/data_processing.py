@@ -39,6 +39,7 @@ class data_proc_main(object):
 		self.min_part_dis=200 #min number of patients with disease x before included
 
 		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
+		self.path2="/Users/michaelallwright/Documents/GitHub/ukb-dementia-shap/static/"
 		self.fullfile='ukb_tp0_new.parquet'
 		self.cols_nonmiss_file='cols80.csv'
 		self.icd10_file='ukb_ICD10.parquet'
@@ -201,9 +202,9 @@ class data_proc_main(object):
 
 	def treatment_mapping(self):
 
-		coding4=pd.read_csv(self.path+'coding4.tsv',sep="\t")
-		treat_codes=pd.read_csv(self.path+'medications_codes.csv')
-		df=pd.read_parquet(self.path+'ukb_treatments_test.parquet')
+		coding4=pd.read_csv(self.path2+'coding4.tsv',sep="\t")
+		treat_codes=pd.read_csv(self.path2+'medications_codes.csv')
+		df=pd.read_parquet(self.path2+'ukb_treatments_test.parquet')
 
 		df.fillna(0,inplace=True)
 		df[[col for col in df.columns]]=df[[col for col in df.columns]].astype(int)
@@ -684,6 +685,7 @@ class data_proc_main(object):
 
 	def data_merge_dis(self,remwords='alzhei|dementia',disease='AD',icd10s=['G309', 'G308', 'G300', 'G301'],outfile=None,use_icd10=True):
 
+		#label with the disease label you want and enter a list of correspoonding ICD10s
 		df_lab=self.disease_labels_ICD10s(icd10s=icd10s,disease=disease)
 
 
@@ -736,11 +738,6 @@ class data_proc_main(object):
 			df.to_parquet(self.path+outfile)
 
 		return df
-
-
-
-
-
 
 
 	def data_merge(self,use_icd10=True):
