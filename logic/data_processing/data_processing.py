@@ -412,6 +412,8 @@ class data_proc_main(object):
 		df_dis_date_test=pd.read_parquet(self.path+'df_dis_date_test2.parquet')
 		
 		dis_lab=df_dis_date_test[(df_dis_date_test['disease'].isin(icd10s))]
+		print(dis_lab['disease'].value_counts())
+
 		dis_lab=pd.DataFrame(dis_lab.groupby('eid')['disease_date','date_assess'].min()).reset_index()
 		mask=(dis_lab['disease_date']>dis_lab['date_assess']+ DateOffset(years=2))
 		dis_lab['time_to_'+disease]=(dis_lab['disease_date']-dis_lab['date_assess']).dt.days/365.25
