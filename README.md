@@ -22,16 +22,6 @@ To ease the configuation, please install Anaconda and set this up in a virtual e
 
 https://www.anaconda.com/products/individual
 
-2. Create the environment:
-
-```conda env create -f .\conda-env.yml```
-
-3. Acticate the environment:
-
-```conda activate frollo-py-pipeline-env```
-
-Then on Windows, run ```startlocal_woDocker.bat``` and on Linux, run ```startlocal_woDocker.sh```
-
 
 ## Codebase Structure
 
