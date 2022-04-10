@@ -42,9 +42,22 @@ class IDEARs_funcs(object):
 	def __init__(self):
 		"""
 		Initilising models.
+
 		"""
+		self.date_run=str(datetime.now().date())
+		self.mod='dementia'
 		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
-		self.path_figures= "/Users/michaelallwright/Documents/GitHub/UKB/PD/figures/"
+		#self.path_figures= "/Users/michaelallwright/Documents/GitHub/UKB/PD/figures/"
+		self.path_figures= "/Users/michaelallwright/Documents/GitHub/UKB/"+self.mod+"/figures/"
+
+		self.path_figures_dem= "/Users/michaelallwright/Documents/GitHub/UKB/dementia/figures/"
+		self.path_figures_pd= "/Users/michaelallwright/Documents/GitHub/UKB/PD/figures/"
+		self.path_figures_pain= "/Users/michaelallwright/Documents/GitHub/UKB/Pain/figures/"
+
+		self.path_dem="/Users/michaelallwright/Documents/GitHub/UKB/dementia/"
+		self.path_pd="/Users/michaelallwright/Documents/GitHub/UKB/PD/"
+
+		self.path_use="/Users/michaelallwright/Documents/GitHub/UKB/"+self.mod
 
 
 		self.config = dict(scale_pos_weight = 6,subsample = 1, min_child_weight = 5, max_depth = 5, gamma= 2, 
@@ -71,7 +84,7 @@ class IDEARs_funcs(object):
 		self.variablemap=dict({'testosterone_f30850_0_0':'Testosterone',
 		'age_when_attended_assessment_centre_f21003_0_0':'Age at baseline',
 		'parental_pd':'Parent with PD',
-		'neutrophill_percentage_f30200_0_0':'Neutrophill Count',
+		'neutrophill_percentage_f30200_0_0':'Neutrophill Count perc',
 		'hdl_cholesterol_f30760_0_0':'HDL Cholesterol',
 		'igf1_f30770_0_0':'IGF1',
 		'suffer_from_nerves_f2010_0_0':'Suffer from nerves',
@@ -124,7 +137,26 @@ class IDEARs_funcs(object):
 		'inverse_distance_to_the_nearest_major_road_f24012_0_0':'Inverse distance to nearest main road',
 		'mean_time_to_correctly_identify_matches_f20023_0_0':'Mean time to correctly identify matches',
 		'nervous_feelings_f1970_0_0':'Nervous feelings',
-		'phosphate_f30810_0_0':'Phosphate'}) 
+		'phosphate_f30810_0_0':'Phosphate',
+
+		#added for dementia shap charts 2/3/22
+		'longstanding_illness_disability_or_infirmity_f2188_0_0':'Longstanding illness, disability, infirmity',
+		'average_total_household_income_before_tax_f738_0_0':'Average hhold income before tax',
+		'overall_health_rating_f2178_0_0':'Overall health rating', 'perc_correct_matches_rounds':'Percentage correct rounds',
+		'sleeplessness_insomnia_f1200_0_0':'Sleeplessness/ insomina',
+		'time_spent_driving_f1090_0_0':'Time spent driving',
+		'processed_meat_intake_f1349_0_0':'Processed meat intake',
+ 		'falls_in_the_last_year_f2296_0_0':'Falls in last year', 'urea_f30670_0_0':'Urea',
+		'frequency_of_depressed_mood_in_last_2_weeks_f2050_0_0':'Frequency of depressed mood in last week',
+		'number_of_incorrect_matches_in_round_f399_0_2':'Number of incorrect matches in round',
+		'frequency_of_unenthusiasm_disinterest_in_last_2_weeks_f2060_0_0':'Frequency of unenthusiasm/ disinterest',
+ 		'never_eat_eggs_dairy_wheat_sugar_f6144_0_0_I eat all of the above':'Eat all eggs, wheat, dairy',
+		'number_of_incorrect_matches_in_round_f399_0_1':'Number of incorrect matches in round',
+ 		'worry_too_long_after_embarrassment_f2000_0_0':'Worry too long after embarrassement',
+		'cystatin_c_f30720_0_0':'Cystatin',
+		'lymphocyte_percentage_f30180_0_0':'Lymphocyte percentage',
+		'red_blood_cell_erythrocyte_count_f30010_0_0':'Red blood cell erythrocyte count',
+		'sedentary_time':'Sedentary time'}) 
 
  
 		self.variablemap_group=dict({'testosterone_f30850_0_0':'Blood Biomarkers',
@@ -178,6 +210,22 @@ class IDEARs_funcs(object):
 		'urate_f30880_0_0':'Blood Biomarkers',
 		'urban_rural':'Demographic'}) 
 
+	def pre_process_1(self,df,agemin=50,agemax=70,depvar='dementia',apoe=3):
+
+		df=df.copy()
+		df=self.col_spec_chars(df)
+
+		mask_age=(df['age_when_attended_assessment_centre_f21003_0_0']>=agemin)&(df['age_when_attended_assessment_centre_f21003_0_0']<=agemax)
+		df=df.loc[mask_age,]
+
+		if apoe!=3:
+			df=self.maskapoedf(df,apoe=apoe)
+		#df=self.meanimp(df)
+
+		return df
+
+
+
 	def holdout_data(self,df,agemin=50,agemax=70,depvar='dementia',apoe=3,holdout_ratio=0.2):
 		mask_age=(df['age_when_attended_assessment_centre_f21003_0_0']>=agemin)&(df['age_when_attended_assessment_centre_f21003_0_0']<=agemax)
 
@@ -201,7 +249,7 @@ class IDEARs_funcs(object):
 		   colsample_bynode=1, learning_rate=0.1,
 		   max_delta_step=0,  missing=None, 
 		   n_estimators=60, n_jobs=4, nthread=4, objective='binary:logistic',
-		   random_state=0, reg_alpha=0, reg_lambda=1, scale_pos_weight=self.config['scale_pos_weight'],
+		   random_state=0, reg_alpha=0, reg_lambda=1, #scale_pos_weight=self.config['scale_pos_weight'],
 		   min_child_weight=self.config['min_child_weight'],
 		   gamma=self.config['gamma'], colsample_bytree=self.config['colsample_bytree'],max_depth=self.config['max_depth'],
 		   seed=42, silent=None, subsample=1, verbosity=1,eval_metric='auc')
@@ -246,13 +294,15 @@ class IDEARs_funcs(object):
 		function to choose APOE4 subsets for analysis
 		"""
 
+		
+		if apoe==3:
+			return df
+
 		apoemask=(df['Genotype_e3/e4']==1)|(df['Genotype_e4/e4']==1)|\
 		(df['Genotype_e2/e4']==1)|(df['Genotype_e1/e4']==1)
 		non_apoemask=(df['Genotype_e2/e3']==1)|(df['Genotype_e3/e3']==1)|\
 		(df['Genotype_e1/e2']==1)|(df['Genotype_e2/e2']==1)
 		
-		if apoe==3:
-			return df
 
 		if apoe==2:
 			return df[apoemask|non_apoemask]
@@ -267,7 +317,7 @@ class IDEARs_funcs(object):
 		"""
 		function to clean column names of bad chars
 		"""
-
+		df=df.copy()
 		df.columns=df.columns.str.replace(',','_')
 		df.columns=df.columns.str.replace('<','_')
 		df.columns=df.columns.str.replace('>','_')
@@ -537,9 +587,9 @@ class IDEARs_funcs(object):
 			return df_test_out,importances
 		
 
-	def simpletrain(self,df,model,dropcols,depvar,wordsremove,resizeratio=20,shapshow=1):
+	def simpletrain(self,df,model,dropcols,depvar,wordsremove,resize,resizeratio=20,shapshow=1):
 		
-		df_out=self.preprocess(df,dropcols,depvar,wordsremove,resizeratio)
+		df_out=self.preprocess(df,dropcols,depvar,wordsremove,resize,resizeratio)
 		
 		X=df_out.drop(columns=['eid',depvar])
 		y=df_out[depvar]
@@ -558,10 +608,10 @@ class IDEARs_funcs(object):
 
 		return mod
 
-	def train_eval(self,df_train,df_test,model,dropcols,depvar,wordsremove,resizeratio=20,shapshow=1):
+	def train_eval(self,df_train,df_test,model,dropcols,depvar,wordsremove,resize=1,resizeratio=20,shapshow=1):
 		
-		df_out=self.preprocess(df_train,dropcols,depvar,wordsremove,resizeratio)
-		df_out_test=self.preprocess(df_test,dropcols,depvar,wordsremove,resizeratio)
+		df_out=self.preprocess(df_train,dropcols,depvar,wordsremove,resize,resizeratio)
+		df_out_test=self.preprocess(df_test,dropcols,depvar,wordsremove,resize,resizeratio)
 		
 		X=df_out.drop(columns=['eid',depvar])
 		y=df_out[depvar]
@@ -684,6 +734,9 @@ class IDEARs_funcs(object):
 		k2 = k2.sort_values(by='SHAP_abs',ascending = True)
 
 		k3=k2.tail(max_disp)
+
+		k3['v2']=k3['Variable'].apply(lambda x:self.mapvar(x))
+		k3.loc[pd.notnull(k3['v2']),'Variable']=k3['v2']
 		colorlist = k3['Sign']
 
 		if plot:
@@ -699,10 +752,10 @@ class IDEARs_funcs(object):
 
 			
 			for i, v in enumerate(list(k3['SHAP_abs'])):
-				ax.text(v + 0.01, i, str(round(v,4)), color='black', fontweight='bold', fontsize=14, ha='left', va='center')
+				ax.text(v + 0.01, i, str(round(v,3)), color='black', fontweight='bold', fontsize=14, ha='left', va='center')
 
 
-			plt.savefig(self.path_figures+figname+format_file, dpi=300,bbox_inches='tight')
+			plt.savefig(self.path_figures_pain+figname+self.date_run+format_file, dpi=300,bbox_inches='tight')
 			plt.show()
 
 		return k2
@@ -775,7 +828,9 @@ class IDEARs_funcs(object):
 		plt.show()
 		
 		df_out=pd.DataFrame(df.groupby('Variable').agg({'SHAP_abs':'mean','Corr':'mean','rank':'mean'})).reset_index()
+
 		df_out.columns=['Variable','shap_abs'+lab,'Corr'+lab,'rank'+lab]
+		df_out.sort_values(by='shap_abs'+lab,ascending=False,inplace=True)
 		
 		
 		
@@ -794,7 +849,7 @@ class IDEARs_funcs(object):
 			self.ABS_SHAP(sv, df,25,figx=15,figy=15,figname=figname+' '+str(v))
 
 	def run_entire_data_pd(self,df,drops,wordsremove,outfile,savefile=False,
-		save_featslist=True,runs=5,holdout_ratio=0.2,depvar='PD',agemin=50,agemax=70,resizeratio=20,verbose=False):
+		save_featslist=True,runs=5,holdout_ratio=0.2,depvar='PD',agemin=50,agemax=70,resize=1,resizeratio=20,verbose=False):
 
 		shap_values_list=[]
 		X_list=[]
@@ -805,12 +860,16 @@ class IDEARs_funcs(object):
 				print(i)
 			df_train,df_val=self.holdout_data(df=df,agemin=agemin,agemax=agemax,depvar=depvar,holdout_ratio=holdout_ratio)
 			mod1=self.simpletrain(df=df_train,model=self.model(),dropcols=drops,
-				wordsremove=wordsremove,depvar=depvar,resizeratio=resizeratio,shapshow=0)
+				wordsremove=wordsremove,depvar=depvar,resize=resize,resizeratio=resizeratio,shapshow=0)
 			if verbose:
 				print("trained")
 			shap_values, X, df_out=self.simple_eval(df=df_val,model=mod1,dropcols=drops,
-				wordsremove=wordsremove,depvar=depvar,resize=1,resizeratio=resizeratio,
+				wordsremove=wordsremove,depvar=depvar,resize=resize,resizeratio=resizeratio,
 			shapshow=1)
+
+			#shap_values=shap_values[0]
+
+
 
 			if verbose:
 				print("shap done")
@@ -819,6 +878,8 @@ class IDEARs_funcs(object):
 			df_out_list.append(df_out)
 
 		shap_tuple=[shap_values_list,X_list,df_out_list]
+
+		print(len(shap_tuple))
 
 		if savefile:
 			shap_tuple_file=open(self.path+outfile,'wb')
@@ -833,7 +894,7 @@ class IDEARs_funcs(object):
 		return shap_tuple
 
 	def run_entire_data(self,df,drops,wordsremove,outfile,savefile=False,
-		save_featslist=True,runs=5,holdout_ratio=0.2,depvar='PD',agemin=50,agemax=70,resizeratio=20,verbose=False):
+		save_featslist=True,runs=5,holdout_ratio=0.2,depvar='PD',agemin=50,agemax=70,resize=1,resizeratio=20,verbose=False):
 
 		#shap_values_list=[]
 		X_list=[]
@@ -844,11 +905,11 @@ class IDEARs_funcs(object):
 				print(i)
 			df_train,df_val=self.holdout_data(df=df,agemin=agemin,agemax=agemax,depvar=depvar,holdout_ratio=holdout_ratio)
 			mod1=self.simpletrain(df=df_train,model=self.model(),dropcols=drops,
-				wordsremove=wordsremove,depvar=depvar,resizeratio=resizeratio,shapshow=0)
+				wordsremove=wordsremove,depvar=depvar,resizeratio=resizeratio,shapshow=0,resize=resize)
 			if verbose:
 				print("trained")
 			shap_values, X, df_out=self.simple_eval(df=df_val,model=mod1,dropcols=drops,
-				wordsremove=wordsremove,depvar=depvar,resize=1,resizeratio=resizeratio,
+				wordsremove=wordsremove,depvar=depvar,resize=resize,resizeratio=resizeratio,
 			shapshow=1)
 
 			if verbose:
@@ -873,7 +934,6 @@ class IDEARs_funcs(object):
 
 	def run_entire_data_dem(self,df,drops,wordsremove,runs=5,outfile='shap_tuple_dem.pkl'):
 
-		
 		shap_values_list=[]
 		X_list=[]
 		df_out_list=[]
@@ -882,17 +942,17 @@ class IDEARs_funcs(object):
 			print(i)
 			df_train,df_val=self.holdout_data(df=df,agemin=55,agemax=70,depvar='dementia',apoe=2)
 			mod1=self.simpletrain(df=df_train,model=self.model(),dropcols=drops,
-				wordsremove=wordsremove,depvar='dementia',resizeratio=100,shapshow=0)
+				wordsremove=wordsremove,depvar='dementia',resize=1,resizeratio=100,shapshow=0)
 			shap_values, X, df_out=self.simple_eval(df=df_val,model=mod1,dropcols=drops,
-				wordsremove=wordsremove,depvar='dementia',resize=0,resizeratio=20,
+				wordsremove=wordsremove,depvar='dementia',resize=1,resizeratio=20,
 			shapshow=1)
 
 			shap_values_list.append(shap_values)
-			X_list.append(X)
+			X_list.append(X)	
 			df_out_list.append(df_out)
 
 		shap_tuple=[shap_values_list,X_list,df_out_list]
-		shap_tuple_file=open(self.path+outfile,'wb')
+		shap_tuple_file=open(self.path_dem+'/data/'+outfile,'wb')
 		pickle.dump(shap_tuple,shap_tuple_file)
 		shap_tuple_file.close()
 
@@ -900,7 +960,8 @@ class IDEARs_funcs(object):
 
 	def shapgraphs_tuple(self,tuple,max_disp=20,figname='shap_chart_for..',plot=True):
 		df=pd.concat(tuple[1],axis=0)
-		df.columns=[self.mapvar(c) for c in df.columns]
+
+		#df.columns=[self.mapvar(c) for c in df.columns]
 
 		#print(df.shape)
 		df_shap=np.vstack(tuple[0])
@@ -909,6 +970,14 @@ class IDEARs_funcs(object):
 		return outs
 
 	def ROCAUC_tuples(self,df_out_list,labels,cols,figname='ROCAUC for..',format_out='.svg'):
+		dfs=[pd.concat(df_out_list[i],axis=0) for i in range(len(df_out_list))]
+		y_tests=[dfs[i]['y_test'] for i in range(len(df_out_list))]
+		risks=[dfs[i]['risk'] for i in range(len(df_out_list))]
+		aucs=self.plot_ROCAUC_mult(y_tests,risks,labels,cols,figname=figname,format_out=format_out)
+
+		return aucs
+
+	def ROCAUC_tuples2(self,df_out_list,labels,cols,figname='ROCAUC for..',format_out='.svg'):
 		dfs=[pd.concat(df_out_list[i],axis=0) for i in range(len(df_out_list))]
 		y_tests=[dfs[i]['y_test'] for i in range(len(df_out_list))]
 		risks=[dfs[i]['risk'] for i in range(len(df_out_list))]
@@ -946,7 +1015,7 @@ class IDEARs_funcs(object):
 		plt.xticks(fontsize='18')
 		plt.yticks(fontsize='18')
 		
-		plt.savefig(self.path_figures+figname+format_out, dpi=300,bbox_inches='tight')
+		plt.savefig(self.path_figures_pain+figname+self.date_run+format_out, dpi=300,bbox_inches='tight')
 		plt.show()
 			
 		return aucs
@@ -1026,5 +1095,54 @@ class IDEARs_funcs(object):
 		df[var]=df[var]/df['mean'+var]
 		df.drop(columns=['mean'+var],inplace=True)
 		return df
+
+	def agenorm_df(self,df,depvar,normvar='age_when_attended_assessment_centre_f21003_0_0',min_age=10,max_age=100,samp=5,red_fact=1):
+
+		"""
+		age normalisations
+		"""
+		#depvar=1
+		df=df.copy()
+
+		if 'age_when' in normvar:
+			mask=(df[normvar]>=min_age)&(df[normvar]<=max_age)
+			df=df.loc[mask,]
+
+		df[normvar]=df[normvar].round(0)
+		mask=(df[depvar]==1)
+		df_case=df.loc[mask,]
+
+		df_case=df_case.sample(int(len(df_case)/red_fact))
+		df_ctrl=df.loc[~mask,]
+		ratios_case=dict(df_case.groupby([normvar]).size())
+		ratios_ctrl=dict(df_ctrl.groupby([normvar]).size())
+
+		bal_dict=dict(zip([s for s in ratios_case],[ratios_ctrl[s]/ratios_case[s] for s in ratios_case]))
+
+		#max factor to multiply by
+		fact=int(min([bal_dict[x] for x in bal_dict]))
+
+
+		df_ctrl['ratio']=df_ctrl[normvar].map(ratios_case)*fact
+
+
+		df_ctrl=df_ctrl.loc[pd.notnull(df_ctrl['ratio']),]
+		df_ctrl['ratio']=df_ctrl['ratio'].astype(int)
+		
+		grouped = df_ctrl.groupby(normvar, group_keys=False)
+		df_ctrl=df_ctrl.loc[grouped.apply(lambda x: x.sample(x['ratio'].iloc[0])).index,]
+
+		df_ctrl.drop(columns='ratio',inplace=True)
+
+		df_out=pd.concat([df_case,df_ctrl],axis=0)
+		#df_ctrl_samp=pd.DataFrame(df_ctrl.groupby(normvar).apply(lambda x: x.sample(samp))).reset_index()
+		#df_ctrl_samp=pd.DataFrame(df_ctrl.groupby(normvar).apply(lambda x: x.sample(frac=ratios_case[x]*samp))).reset_index()
+
+		#df_out=pd.concat([df_ctrl,df_case],axis=0)
+    
+
+		return df_out#df_ctrl_samp#df_out
+
+	
 
 

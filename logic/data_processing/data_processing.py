@@ -40,6 +40,7 @@ class data_proc_main(object):
 
 		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
 		self.path2="/Users/michaelallwright/Documents/GitHub/ukb-dementia-shap/static/"
+		self.path_pain="/Users/michaelallwright/Documents/GitHub/UKB/Pain/data/"
 		self.fullfile='ukb_tp0_new.parquet'
 		self.cols_nonmiss_file='cols80.csv'
 		self.icd10_file='ukb_ICD10.parquet'
@@ -164,6 +165,8 @@ class data_proc_main(object):
 
 		return [col for col in df if string in col]
 
+
+
 	def std_scale_newvar(self,df,vars=[],name='inflammation'):
 		for var in vars:
 			trans = StandardScaler()
@@ -199,6 +202,26 @@ class data_proc_main(object):
 			return desc_block
 		except:
 			pass
+
+	def ukb_icd10(self):
+		df=pd.read_csv('/Users/michaelallwright/Documents/GitHub/UKB/data/icd10list_ukb.csv')
+		df['code']=df['ICD10'].apply(lambda x:x[0:x.find(' ')])
+		df['disease']=df['ICD10'].apply(lambda x:x[x.find(' ')+1:len(x)])
+		df['code']=df['code'].apply(lambda x:x.replace('.',''))
+		df['disease']=df['disease'].apply(lambda x:x.lower())
+		df['disease']=df['disease'].apply(lambda x:x.replace('-',''))
+
+		df=df[['code','disease']]
+
+		return df
+
+	def ukb_icd10_r(self):
+		df=pd.read_csv('/Users/michaelallwright/Documents/GitHub/UKB/data/code_map2.csv')
+		df=df.loc[df['Coding']==19,['Value','Meaning']]
+		df['Meaning']=df['Meaning'].apply(lambda x:x.lower())
+		icd10_lkup_dict=dict(zip(df['Value'],df['Meaning']))
+
+		return icd10_lkup_dict
 
 	def treatment_mapping(self):
 
@@ -256,6 +279,8 @@ class data_proc_main(object):
 
 		return df_out
 
+
+
 	def specific_disease_label(self,icd10s,disname):
 		df_dis_date=pd.read_parquet(self.path+'df_dis_date_test.parquet')
 		mask_icd=(df_dis_date['disease'].isin(icd10s))
@@ -283,9 +308,11 @@ class data_proc_main(object):
 
 
 
-	def dis_date_file(self):
 
-		df=pd.read_parquet('%s%s' % (self.path,self.icd10_file))
+
+	def dis_date_file(self,infile='ukb_ICD10.parquet',outfile='dis_ohe_icd10_test.parquet'):
+
+		df=pd.read_parquet('%s%s' % (self.path,infile))
 
 		
 		#format dates and work out age today
@@ -338,10 +365,11 @@ class data_proc_main(object):
 
 		df_dis_date['disease_name']=df_dis_date['disease'].apply(self.returndesc)
 		df_dis_date['disease_block']=df_dis_date['disease'].apply(self.returndescblock)
+
+		dictmap=self.ukb_icd10_r()
+		df_dis_date['disease_name_new']=df_dis_date['disease'].map(dictmap)
 		df_dis_date.rename(columns={'date_of_attending_assessment_centre_f53_0_0':'date_assess','dis_date':'disease_date'}\
 	,inplace=True)
-
-
 	
 
 		#create dummie variables for diseases if before assessment centre (dis_bef) for indep vars and if after 2 years/
@@ -403,16 +431,19 @@ class data_proc_main(object):
 
 		#output files
 		#df_dis_date.to_parquet(self.path+'df_dis_date_test.parquet')
-		dis_ohe_icd10.to_parquet(self.path+'dis_ohe_icd10_test.parquet')
+		dis_ohe_icd10.to_parquet(self.path+outfile)
 
 
 		return df_dis_date,dis_ohe_icd10
 
-	def disease_labels_ICD10s(self,icd10s=['G309', 'G308', 'G300', 'G301'],disease='AD',out='test.parquet'):
+	def disease_labels_ICD10s(self,icd10s=['G309', 'G308', 'G300', 'G301'],disease='AD',out='test.parquet',strcont=False):
 
 		df_dis_date_test=pd.read_parquet(self.path+'df_dis_date_test2.parquet')
 		
-		dis_lab=df_dis_date_test[(df_dis_date_test['disease'].isin(icd10s))]
+		if strcont:
+			dis_lab=df_dis_date_test[(df_dis_date_test['disease'].str.contains(icd10s,regex=True))]
+		else:
+			dis_lab=df_dis_date_test[(df_dis_date_test['disease'].isin(icd10s))]
 		print(dis_lab['disease'].value_counts())
 
 		dis_lab=pd.DataFrame(dis_lab.groupby('eid')['disease_date','date_assess'].min()).reset_index()
@@ -426,6 +457,51 @@ class data_proc_main(object):
 		dis_lab.to_parquet(self.path+out)
 
 		return dis_lab
+
+	def disease_labels_ICD10s2(self,icd10s=['G309', 'G308', 'G300', 'G301'],disease='AD',out='test.parquet',strcont=False,bef=False,
+		years=2,outfile=True):
+
+		df_dis_date_test=pd.read_parquet(self.path+'df_dis_date_test2.parquet')
+		
+		if strcont:
+			dis_lab=df_dis_date_test[(df_dis_date_test['disease'].str.contains(icd10s,regex=True))]
+		else:
+			dis_lab=df_dis_date_test[(df_dis_date_test['disease'].isin(icd10s))]
+		
+		dis_lab_full=dis_lab.copy()
+
+		dis_lab=pd.DataFrame(dis_lab.groupby('eid')['disease_date','date_assess'].min()).reset_index()
+
+		if bef:
+			mask=(dis_lab['disease_date']<dis_lab['date_assess']+ DateOffset(years=years))
+			word='time_since_'
+			dis_lab[word+disease]=(dis_lab['date_assess']-dis_lab['disease_date']).dt.days/365.25
+
+			mask2=(dis_lab_full['disease_date']<dis_lab_full['date_assess']+ DateOffset(years=years))
+			word='time_since_'
+			dis_lab_full[word+disease]=(dis_lab_full['date_assess']-dis_lab_full['disease_date']).dt.days/365.25
+
+		else:
+			mask=(dis_lab['disease_date']>dis_lab['date_assess']+ DateOffset(years=years))
+			word='time_to_'
+			dis_lab[word+disease]=(dis_lab['disease_date']-dis_lab['date_assess']).dt.days/365.25
+
+			mask2=(dis_lab_full['disease_date']>dis_lab_full['date_assess']+ DateOffset(years=years))
+			word='time_to_'
+			dis_lab_full[word+disease]=(dis_lab_full['disease_date']-dis_lab_full['date_assess']).dt.days/365.25
+
+		dis_lab[disease]=-1
+		dis_lab[disease][mask]=1
+
+		dis_lab.rename(columns={'disease_date':disease+'_date'},inplace=True)
+
+		dis_lab['eid']=dis_lab['eid'].astype(str)
+		dis_lab_full['eid']=dis_lab_full['eid'].astype(str)
+
+		if outfile:
+			dis_lab.to_parquet(self.path+out)
+
+		return dis_lab,dis_lab_full
 
 	def famhistory(self):
 
@@ -590,7 +666,7 @@ class data_proc_main(object):
 	def create_dic(self,df,maxnum=15):
 		return [(col,set(df[col][pd.notnull(df[col])].unique())) for col in df.columns if len(df[col].unique())<=maxnum]
 
-	def ordinal_lookup(self,df):
+	def ordinal_lookup(self,df,outfile='vallistcomp_test.csv'):
 		list1=self.create_dic(df,maxnum=15)
 		valslist=pd.DataFrame(list1)
 		valslist.columns=['column','values']
@@ -598,9 +674,9 @@ class data_proc_main(object):
 		vallist2=pd.DataFrame(valslist['values'].value_counts()).reset_index()
 		vallist2.columns=['values','recs']
 		vallist2['merge']=vallist2['values'].astype(str)
-		vallistcomp=pd.merge(valslist,vallist2,on='merge',how='left')
+		vallistcomp=pd.merge(valslist['column'],vallist2,on='merge',how='left')
 		vallistcomp.sort_values(by='recs',ascending=False,inplace=True)
-		vallistcomp.to_csv(self.path+'vallistcomp_test.csv')
+		vallistcomp.to_csv(self.path+outfile)
 
 		return vallistcomp
 
@@ -676,17 +752,65 @@ class data_proc_main(object):
 		excluded_vars=excluded_vars+excvars
 		cts_df=self.cts_data(df)
 		df_ord=self.ord_data(df)
-		df_model=pd.merge(df_ord,cts_df,on='eid',how='left')
-		df_model=pd.merge(df_model,ohe_df,on='eid',how='left')
-		df_model=pd.merge(df[self.keycols],df_model,on='eid',how='left')
-		df_model.to_parquet(self.path+'df_model_test.parquet')
 
-		return df_model,excluded_vars
+		df_fam_pddem=pd.read_parquet(self.path+'df_fam_pddem.parquet')
+		apoe4_df=pd.read_parquet(self.path+'genotype.parquet')
+		ukb_treatments=pd.read_parquet(self.path+'treatments_test.parquet')
 
-	def data_merge_dis(self,remwords='alzhei|dementia',disease='AD',icd10s=['G309', 'G308', 'G300', 'G301'],outfile=None,use_icd10=True):
+
+
+		for i,df in enumerate([df_fam_pddem,apoe4_df,ukb_treatments]):
+			df['eid']=df['eid'].astype(str)	
+
+
+
+		df=pd.merge(df_ord,cts_df,on='eid',how='left')
+		df=pd.merge(df_model,ohe_df,on='eid',how='left')
+		
+		df=pd.merge(df,ukb_treatments,on='eid',how='left')
+		df=pd.merge(df,apoe4_df,on='eid',how='left')
+		df=pd.merge(df,df_fam_pddem,on='eid',how='left')
+
+
+		df.to_parquet(self.path+'df_model_test.parquet')
+
+		return df,excluded_vars
+
+	def mod_data_append(self):
+		df=pd.read_parquet(self.path+'df_model_test.parquet')
+		df['eid']=df['eid'].astype(str)
+
+		print(df.shape)
+
+		df_fam_pddem=pd.read_parquet(self.path+'df_fam_pddem.parquet')
+		apoe4_df=pd.read_parquet(self.path+'genotype.parquet')
+		ukb_treatments=pd.read_parquet(self.path+'treatments_test.parquet')
+
+		for i,df1 in enumerate([df_fam_pddem,apoe4_df,ukb_treatments]):
+			df1['eid']=df1['eid'].astype(str)	
+
+		print(df.shape)
+
+		df=pd.merge(df,ukb_treatments,on='eid',how='left')
+		df=pd.merge(df,apoe4_df,on='eid',how='left')
+		df=pd.merge(df,df_fam_pddem,on='eid',how='left')
+
+		print(df.shape)
+
+		df.to_parquet(self.path+'df_model_test_treat.parquet')
+
+		return df
+
+	
+
+	def data_merge_dis(self,remwords='alzhei|dementia',disease='AD',icd10s=['G309', 'G308', 'G300', 'G301'],
+		outfile=None,use_icd10=True,strcont=False,bef=False,years=2):
 
 		#label with the disease label you want and enter a list of correspoonding ICD10s
-		df_lab=self.disease_labels_ICD10s(icd10s=icd10s,disease=disease)
+		#df_lab=self.disease_labels_ICD10s(icd10s=icd10s,disease=disease,strcont=strcont)
+
+		df_lab=self.disease_labels_ICD10s2(icd10s=icd10s,disease=disease,strcont=strcont,bef=bef,\
+	years=years,outfile=outfile)[0]
 
 
 		df_model=pd.read_parquet(self.path+'df_model.parquet')
@@ -704,7 +828,7 @@ class data_proc_main(object):
 		deaths['date_of_death_f40000_0_0']=pd.to_datetime(deaths['date_of_death_f40000_0_0'])
 
 		for i,df in enumerate([df_lab,dis_ohe,dis_ohe_icd10,deaths,df_model,ukb_treatments,apoe4_df,df_fam_pddem]):
-			df['eid']=df['eid'].astype(str)
+			df['eid']=df['eid'].astype(str)	
 
 		#deaths not of the condition - we will include deaths from the condition
 		#where condition was developed prior to 2 year interval
@@ -712,7 +836,12 @@ class data_proc_main(object):
 		df=pd.merge(df_model,ukb_treatments,on='eid',how='left')
 		df=pd.merge(df,apoe4_df,on='eid',how='left')
 		df=pd.merge(df,df_fam_pddem,on='eid',how='left')
-		df=pd.merge(df,df_lab[['eid',disease,'time_to_'+disease]],on='eid',how='left')
+
+		if bef:
+			word='since'
+		else:
+			word='to'
+		df=pd.merge(df,df_lab[['eid',disease,'time_'+word+'_'+disease]],on='eid',how='left')
 
 		if use_icd10:
 			df=pd.merge(df,dis_ohe_icd10,on='eid',how='inner')
@@ -733,6 +862,8 @@ class data_proc_main(object):
 		df=df[~(df['eid'].isin(eid_excludes))]
 
 		df=df[col_includes]
+
+		df['eid']=df['eid'].astype(str)
 
 		if outfile:
 			df.to_parquet(self.path+outfile)

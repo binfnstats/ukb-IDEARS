@@ -15,6 +15,7 @@ to do the key analyses
 
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 import seaborn as sns
 import os
@@ -40,6 +41,10 @@ class AnalysisCharts(object):
 		"""
 		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
 		self.pathfig='/Users/michaelallwright/Documents/GitHub/UKB/PD/figures/'
+		self.path_figures_dem= "/Users/michaelallwright/Documents/GitHub/UKB/dementia/figures/"
+		self.path_figures_pd= "/Users/michaelallwright/Documents/GitHub/UKB/PD/figures/"
+		self.path_figures_pain= "/Users/michaelallwright/Documents/GitHub/UKB/Pain/figures/"
+		self.date_run=str(datetime.now().date())
 
 		#check which cholesterol it is
 		self.yaxis_units=dict({'igf1_f30770_0_0':'nmol/L','total_bilirubin_f30840_0_0':'umol/L',
@@ -138,12 +143,12 @@ class AnalysisCharts(object):
 		df.drop(columns=['mean'+var],inplace=True)
 		return df
 
-	def age_gend_norm_mult(self,df,vars):
-		df_sum=pd.DataFrame(df.groupby(['age_when_attended_assessment_centre_f21003_0_0','sex_f31_0_0'])[vars].mean()).reset_index()
+	def age_gend_norm_mult(self,df,vars,normvars=['age_when_attended_assessment_centre_f21003_0_0','sex_f31_0_0']):
+		df_sum=pd.DataFrame(df.groupby(normvars)[vars].mean()).reset_index()
    
-		df_sum.columns=['age_when_attended_assessment_centre_f21003_0_0','sex_f31_0_0']+['mean'+v for v in vars]
+		df_sum.columns=normvars+['mean'+v for v in vars]
 
-		df=pd.merge(df,df_sum,on=['age_when_attended_assessment_centre_f21003_0_0','sex_f31_0_0'],how='left')
+		df=pd.merge(df,df_sum,on=normvars,how='left')
 
 		for v in vars:
 			df[v]=df[v]/df['mean'+v]
@@ -183,13 +188,25 @@ class AnalysisCharts(object):
 		return slope_ap, intercept_ap, r_value_ap, p_value_ap, std_err_ap
 
 	def calc_rr(self,df,var,slicevar='APOE4 Status',splitval=0,depvar='dementia',
-		xlabel='Total number of conditions at baseline',ylabel='Relative Risk',leg=0,quint=1):
+		xlabel='Total number of conditions at baseline',ylabel='Relative Risk',leg=0,quint=1,val_comp=1,figname='fig3_',quant=1,
+		vcomp='RR',pic_ext='.svg'):
+
+		df=df.loc[pd.notnull(df[var]),]
+		df.loc[df[var]==np.inf,var]=np.nan
+
+		var_orig=var
 
 		if quint==1:
 			df=self.df_quint(df,var=var)
 			var=var+'_quint'
 
-		df_sum=pd.DataFrame(df.groupby([slicevar,var]).agg({depvar:['sum','count']})).reset_index()
+		df1=df.copy()
+		
+
+		if quant<1:
+			df1=df1.loc[df[var]<df1[var].quantile(quant),]
+
+		df_sum=pd.DataFrame(df1.groupby([slicevar,var]).agg({depvar:['sum','count']})).reset_index()
 		df_sum.columns=[slicevar,var,depvar+'_sum',depvar+'_count']
 		df_sum['UI']=df_sum[slicevar].astype(str)+'_'+df_sum[var].astype(str)
 		df_sum['ART']=df_sum[depvar+'_sum']/df_sum[depvar+'_count']
@@ -197,8 +214,15 @@ class AnalysisCharts(object):
 		df_sum['ARC']=0
 		df_sum['RR']=0
 		
-		slope_diff,pval=self.pvalue_slopes(df,var=var,depvar=depvar,splitvar=slicevar,splitval=splitval)
+		#keep original df here for whole area
+		slope_diff,pval=self.pvalue_slopes(df,var=var_orig,depvar=depvar,splitvar=slicevar,splitval=splitval,val_comp=val_comp)
 		
+		df2=df1.copy()
+
+		if slicevar=='APOE4_Status':
+			df2.loc[df2[slicevar]==0,slicevar]='APOE4 -ve'
+			df2.loc[df2[slicevar]==1,slicevar]='APOE4 +ve'
+
 		for q in df_sum['UI'].unique():
 			mask=(df_sum['UI']==q)
 			ARC=df_sum[~mask][depvar+'_sum'].sum()/df_sum[~mask][depvar+'_count'].sum()
@@ -208,19 +232,42 @@ class AnalysisCharts(object):
 		df_sum2=pd.DataFrame(df_sum.groupby([slicevar,var])['RR'].mean().unstack(slicevar)).reset_index()
 		figure(figsize=(15, 10))
 		
-		ax=sns.lineplot(data=df_sum, x=var, y='RR',hue=slicevar,estimator='mean',palette = 'Greys_r',linewidth = 4)#,palette = Greys_r)
+		if vcomp=='RR':
+			ax=sns.lineplot(data=df_sum, x=var, y='RR',hue=slicevar,estimator='mean',palette = 'Greys_r',linewidth = 4)#,palette = Greys_r)
+		elif vcomp=='ART':
+			ax=sns.lineplot(data=df2, x=var, y=depvar,hue=slicevar,estimator='mean',palette = 'Greys_r',linewidth = 4)
 		ax.set(xlabel=xlabel,ylabel=ylabel)
+
 		
-		plt.setp(ax.get_legend().get_texts(), fontsize='30') # for legend text
-		plt.setp(ax.get_legend().get_title(), fontsize='32') # for legend title
+		handles, labels = ax.get_legend_handles_labels()
+		ax.legend(handles=handles[2:], labels=labels[2:])
+		print(handles)
 		
-		if leg==0:
+		plt.setp(ax.get_legend().get_texts(), fontsize='32') # for legend text
+		
+		if leg==0:	
 			ax.get_legend().remove()
+
+		plt.xticks(fontsize='32')
+		plt.yticks(fontsize='32')
+
+		if 'longstanding' in var:
+			ax.xaxis.set_ticks(np.arange(3))
+		if quint==1:
+			ax.xaxis.set_ticks(np.arange(5))
+		if 'Retired' in var:
+			ax.xaxis.set_ticks(np.arange(2))
+		if 'overall_health_rating_f2178_0_0' in var:
+			ax.xaxis.set_ticks(np.arange(3))
+		if 'alcohol' in var:
+			ax.xaxis.set_ticks(np.arange(5))
+
 		
-		plt.xticks(fontsize='24')
-		plt.yticks(fontsize='24')
-		plt.xlabel(xlabel, fontsize=24)
-		plt.ylabel(ylabel, fontsize=24)
+		
+		plt.xlabel(xlabel, fontsize=32)
+		plt.ylabel(ylabel, fontsize=32)
+
+		#plt.ylim(10, 40)
 		if pval<0.001:
 			symb="(***)"
 		elif pval<0.01:
@@ -228,7 +275,7 @@ class AnalysisCharts(object):
 		elif pval<0.05:
 			symb="(*)"
 		else:
-			symb=" (ns)"
+			symb="(ns)"
 		if round(pval,4)==0:
 			valsymb="{:.2E}".format(Decimal(pval))
 		else:
@@ -236,14 +283,32 @@ class AnalysisCharts(object):
 			
 		
 			
-		plt.text(0.5,0.8,'slope ratio: '+str("{:.0%}".format(round(slope_diff,5))+' '+str(symb)),horizontalalignment='center',
-				verticalalignment='center', transform = ax.transAxes, fontsize='24')
-		#plt.text(0.5,0.7,'(p = '+valsymb+symb+')',horizontalalignment='center',
-		#		verticalalignment='center', transform = ax.transAxes, fontsize='24')
-		plt.savefig(self.path+'fig3'+"_"+var+'.svg', dpi=300)
+		#plt.text(0.5,0.7,'slope ratio: '+str("{:.0%}".format(round(slope_diff,5))+' '+str(symb)),horizontalalignment='center',
+		#	verticalalignment='center', transform = ax.transAxes, fontsize='28')
+
+		plt.text(0.5,0.7,str(round(slope_diff,2))+' '+str(symb),horizontalalignment='center',
+			verticalalignment='center', transform = ax.transAxes, fontsize='28')
+		
+		plt.savefig(self.path_figures_dem+figname+"_"+var+"_"+self.date_run+pic_ext, dpi=300)
 		plt.show()
 
-	def pvalue_slopes(self,df,var,depvar,splitvar,splitval):
+		# return the variable summarised by its groups and values
+		df_out=pd.DataFrame(df2.groupby([var,slicevar]).agg({depvar:['mean','sum','count']})).reset_index()
+		
+		df_out.columns=['Variable_value',slicevar,depvar+' incidence rate','total '+depvar,'total participants']
+
+		if quint==1:
+			suff=' (quintile)'
+		else:
+			suff=''
+		df_out['Variable']=var+suff
+			
+
+		return df_out
+
+		
+
+	def pvalue_slopes(self,df,var,depvar,splitvar,splitval,val_comp=1,return_all=False):
 	
 		mask_aspnnull=(pd.notnull(df[var]))
 		mask_split=(df[splitvar]>splitval)
@@ -258,8 +323,10 @@ class AnalysisCharts(object):
 		slope1, intercept1, r_value1, p_value1, std_err1 = \
 		stats.linregress(df[mask_aspnnull&mask_split][var+'_std'],df[mask_aspnnull&mask_split][depvar])
 
+
 		slope2, intercept2, r_value2, p_value2, std_err2 = \
 		stats.linregress(df[mask_aspnnull&~mask_split][var+'_std'],df[mask_aspnnull&~mask_split][depvar])
+
 		
 		
 		
@@ -282,12 +349,19 @@ class AnalysisCharts(object):
 		p_value = stats.norm.sf(abs(z))
 		print(p_value)
 		
-		slope_diff=(slope2/slope1) -1
+		#val_comp is 0 if we are comparing the top value as numerator from the split vars else it's 1
+		if val_comp==0:
+			slope_diff=(slope2/slope1) 
+		else:
+			slope_diff=(slope1/slope2) 
+
 		
 		print('Slope Difference: '+str(slope_diff))
-		
-		
-		return slope_diff,p_value
+
+		if return_all:
+			return slope_diff,slope1,slope2,p_value
+		else:
+			return slope_diff,p_value
 
 	def varsplit(self,df,splitvar,splitval,cols,depvar):
 		print("yah!")
@@ -334,7 +408,7 @@ class AnalysisCharts(object):
 		
 		return ttest_vals
 
-	def disease_traj(self,labelfile='labels_dates_test.parquet',dis_date='parkins_date',disease='PD',vars=['igf1_f30770_0_0'],
+	def disease_traj(self,df=None,labelfile='labels_dates_test.parquet',dis_date='parkins_date',disease='PD',vars=['igf1_f30770_0_0'],
 	splitvar='sex_f31_0_0',agemin=50,agemax=70,labels=['Female','Male'],varnames='IGF1',plots='lineplots',ttest_use=False,
 	agegendnormvars=[],exc_deaths=False,dis_label=True):
 
@@ -350,8 +424,10 @@ class AnalysisCharts(object):
 		else:
 			colsimport=list(set(list(['eid','age_when_attended_assessment_centre_f21003_0_0',splitvar]+vars)))
 
-	
-		df_model=pd.read_parquet(self.path+'df_all_final.parquet',columns=colsimport)
+		if df==None:
+			df_model=pd.read_parquet(self.path+'df_all_final.parquet',columns=colsimport)
+		else:
+			df_model=df.copy()
 
 		if dis_label:
 			labelcols=['eid',dis_date]
@@ -400,6 +476,9 @@ class AnalysisCharts(object):
 		grid = plt.GridSpec(k, k, hspace=0.45, wspace=0.3)
 
 		ttestvals=[]
+		lq_vals=[]
+		med_vals=[]
+		uq_vals=[]
 		pvallist=[]
 		varnameslist=[]
 		splitnames=[]
@@ -528,6 +607,10 @@ class AnalysisCharts(object):
 						min_val=df_test[v][mask_use&mask_dis_stage].min()
 						q_25=df_test[v][mask_use&mask_dis_stage].quantile(0.25)
 						q_75=df_test[v][mask_use&mask_dis_stage].quantile(0.75)
+						med=df_test[v][mask_use&mask_dis_stage].quantile(0.5)
+
+						
+
 						iqr=q_75-q_25
 
 						std_val=round(df_test[v][mask_use&mask_dis_stage].std(),3)
@@ -541,6 +624,11 @@ class AnalysisCharts(object):
 						ttest_val_inc=round(df_test[mask_use&mask_dis_stage][v].mean(),3)#round(ttest_vals[0],3)
 						pval_inc=round(ttest_vals[1],6)
 						ttestvals.append(ttest_val_inc)
+						med_vals.append(med)
+						lq_vals.append(q_25)
+						uq_vals.append(q_75)
+
+
 						pvallist.append(pval_inc)
 						pvallist_small.append(pval_inc)
 						varnameslist.append(v)
@@ -563,7 +651,7 @@ class AnalysisCharts(object):
 							sig='*'
 
 						if sig !='':
-							x1, x2 = 0, k   # columns 'Sat' and 'Sun' (first column: 0, see plt.xticks())
+							x1, x2 = 0, k  
 							y, h, col = iqr_pos + (iqr_pos_arr[k]-iqr_neg_arr[k])/5, k*(iqr_pos_arr[k]-iqr_neg_arr[k])/5, 'black'
 							plt.plot([x1, x1, x2, x2], [y, y+h, y+h, y], lw=1.5, c=col)
 							#plt.text((x1+x2)*.5, y+h, 'p= '+str(pvallist_small[k])+' '+str(sig), ha='center', va='bottom', color=col,
@@ -575,11 +663,11 @@ class AnalysisCharts(object):
 					
 
 		
-		plt.savefig(self.pathfig+'fig_211118_'+"_"+varnames+'.jpg', dpi=300,bbox_inches='tight')
+		plt.savefig(self.pathfig+'fig_'+self.date_run+"_"+varnames+'.jpg', dpi=300,bbox_inches='tight')
 		plt.show()
 		if ttest_use:
 			pvals_df=pd.DataFrame({'var':varnameslist,'split':splitnames,'compgroup':comp_groups,
-				'mean_val':ttestvals,'pvals':pvallist,'std_vals':std_vals})
+				'mean_val':ttestvals,'median':med_vals,'lower_quartile':lq_vals,'upper_quartile':uq_vals,'pvals':pvallist,'std_vals':std_vals})
 			df_test=[df_test,pvals_df]
 
 
