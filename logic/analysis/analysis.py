@@ -28,6 +28,8 @@ from scipy.stats import t
 from sklearn.preprocessing import StandardScaler
 from logic.ml.classification_shap import IDEARs_funcs
 
+ml=IDEARs_funcs()
+
 
 
 class AnalysisCharts(object):
@@ -39,6 +41,8 @@ class AnalysisCharts(object):
 		"""
 		Initilising models.
 		"""
+
+		self.date_run=str(datetime.now().date())
 		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
 		self.pathfig='/Users/michaelallwright/Documents/GitHub/UKB/PD/figures/'
 		self.path_figures_dem= "/Users/michaelallwright/Documents/GitHub/UKB/dementia/figures/"
@@ -49,6 +53,8 @@ class AnalysisCharts(object):
 		#check which cholesterol it is
 		self.yaxis_units=dict({'igf1_f30770_0_0':'nmol/L','total_bilirubin_f30840_0_0':'umol/L',
 			'AST_ALT_ratio':'AST:ALT ratio',
+			'creatinine_enzymatic_in_urine_f30510_0_0':'micromole/L',
+			'urate_f30880_0_0':'umol/L',
 			'neutrophill_count_f30140_0_0':'10^9 cells/Litre','lymphocyte_count_f30120_0_0':'10^9 cells/Litre',
 			'neutrophill_lymphocyte_ratio':'Ratio',
 		 'creactive_protein_f30710_0_0':'mg/L','ibuprofen':'Percentage taking Ibuprofen',
@@ -101,6 +107,26 @@ class AnalysisCharts(object):
 		df_sum=pd.DataFrame({'Variable':vars,'Cases':cases,'Controls':controls,'Total':total})
 
 		return df_sum
+
+	def agenorm(self,df,var,normvar='age_when_attended_assessment_centre_f21003_0_0'):
+		df_sum=pd.DataFrame(df.groupby([normvar]).agg({var:['mean']})).reset_index()
+		df_sum.columns=[normvar,'mean'+var]
+
+		df=pd.merge(df,df_sum,on=normvar,how='left')
+
+		df[var]=df[var].mean()*df[var]/df['mean'+var]
+		df.drop(columns=['mean'+var],inplace=True)
+		return df
+
+	def varnorm(self,df,var,normvar=['age_when_attended_assessment_centre_f21003_0_0']):
+		df_sum=pd.DataFrame(df.groupby(normvar).agg({var:['mean']})).reset_index()
+		df_sum.columns=normvar+['mean'+var]
+
+		df=pd.merge(df,df_sum,on=normvar,how='left')
+
+		df[var]=df[var].mean()*df[var]/df['mean'+var]
+		df.drop(columns=['mean'+var],inplace=True)
+		return df
 
 
 
@@ -283,11 +309,11 @@ class AnalysisCharts(object):
 			
 		
 			
-		#plt.text(0.5,0.7,'slope ratio: '+str("{:.0%}".format(round(slope_diff,5))+' '+str(symb)),horizontalalignment='center',
-		#	verticalalignment='center', transform = ax.transAxes, fontsize='28')
-
-		plt.text(0.5,0.7,str(round(slope_diff,2))+' '+str(symb),horizontalalignment='center',
+		plt.text(0.5,0.7,'slope ratio: '+str("{:.0%}".format(round(slope_diff,5))+' '+str(symb)),horizontalalignment='center',
 			verticalalignment='center', transform = ax.transAxes, fontsize='28')
+
+		#plt.text(0.5,0.7,str(round(slope_diff,2))+' '+str(symb),horizontalalignment='center',
+		#	verticalalignment='center', transform = ax.transAxes, fontsize='28')
 		
 		plt.savefig(self.path_figures_dem+figname+"_"+var+"_"+self.date_run+pic_ext, dpi=300)
 		plt.show()
@@ -408,6 +434,229 @@ class AnalysisCharts(object):
 		
 		return ttest_vals
 
+	def get_dis_stage(self,x,disease='PD'):
+		if x<-10:
+			y='<10'
+		elif x>=-10 and x<=-5:
+			y='-10>-5'
+		elif x>-5 and x<=0:
+			y='-5>0'
+		elif x>0 and x<=5:
+			y='0>5'
+		elif x>5:
+			y='5+'
+		else:
+			y='No '+disease
+
+		return y
+
+	def getpval_arr(self,pval_array,length=3):
+
+		pvals_out=[]
+		for k in list(np.arange(length)):
+			sig='ns'
+
+			if pval_array[k]<0.001:
+				sig='***'
+			elif pval_array[k]<0.005:
+				sig='**'
+			elif pval_array[k]<0.05:
+				sig='*'
+			pvals_out.append(sig)
+
+		return pvals_out
+
+
+
+
+
+
+	def analysis_boxplots(self,df,dis_date='parkins_date',disease='PD',vars=['igf1_f30770_0_0'],
+	splitvar='sex_f31_0_0',agemin=50,agemax=70,labels=dict({1:'Female',0:'Male'}),varnames='test',exc_deaths=False,dis_label=True,
+	agenormvars=[],agevar='age_when_attended_assessment_centre_f21003_0_0',min_dis_bef=-20,max_dis_aft=15):
+
+		df=df.copy()
+
+
+
+		compgroups=list(['No '+disease,'-10>-5','-5>0','0>5'])
+
+		cols_use=['eid','years_'+disease,disease,splitvar,agevar]+vars
+		mask=((df['years_'+disease]<=max_dis_aft)&(df['years_'+disease]>=min_dis_bef))|pd.isnull(df['years_'+disease])
+		df=df.loc[mask,cols_use]
+
+		
+		df['dis_stage']=df.apply(lambda x:self.get_dis_stage(disease=disease,x=x['years_'+disease]),axis=1)
+
+		#df['years_'+disease].apply(self.get_dis_stage(disease=disease))
+
+		
+		compgroups=[c for c in compgroups if c in list(df['dis_stage'].unique())]
+
+		#print(compgroups)
+
+
+		for a in agenormvars:
+			df=self.agenorm(df,a)
+
+		k=len(vars)
+		fig = plt.figure(figsize=(15*k, 10*k))
+		grid = plt.GridSpec(k, k, hspace=0.45, wspace=0.3)
+
+		ttestvals=[]
+		lq_vals=[]
+		med_vals=[]
+		uq_vals=[]
+		pvallist=[]
+		varnameslist=[]
+		splitnames=[]
+		comp_groups=[]
+		std_vals=[]
+		grpsize_arr=[]
+
+
+		splitvars=list(set(list(df.loc[pd.notnull(df[splitvar]),splitvar].unique())))
+
+		#print('splitvars',splitvars)
+
+		
+
+
+		for i,v in enumerate(vars):
+			
+
+			for j,t in enumerate(splitvars):
+
+				#print(i)
+				#print(labels[i])
+				#mask1=pd.isnull(df[dis_date])
+				
+				#max_mask=(df[v]<df[v].quantile(0.99))
+
+
+				mask=(pd.notnull(df[v]))&(df[splitvar]==t)&(df[v]!=np.inf)
+
+				
+				ax=fig.add_subplot(grid[i, j])
+				avg=df.loc[mask,v].mean()
+
+				
+
+				df_use=df.loc[mask,]
+				df_use.sort_values(by='dis_stage',inplace=True)
+				
+
+				ax=sns.boxplot(x=df_use['dis_stage'],y=df_use[v],order=compgroups,showfliers = False,color='skyblue')
+				plt.xticks(fontsize='35')
+				plt.yticks(fontsize='35')
+				#plt.ylabel(v, fontsize=24)
+				if v in self.yaxis_units:
+					unit=self.yaxis_units[v]
+				else:
+					unit='%'
+				plt.ylabel(unit,fontsize='30')
+				plt.xlabel(labels[t]+'s: '+str(ml.mapvar(v)), fontsize='35')
+				plt.xlabel('Years of '+disease)
+				plt.title(labels[t]+'s: '+str(ml.mapvar(v)), fontsize='35')
+
+				#whisker locations - find top within group whisker
+				max_val=df_use[v].max()
+				min_val=df_use[v].min()
+				q_25=df_use[v].quantile(0.25)
+				q_75=df_use[v].quantile(0.75)
+				iqr=q_75-q_25
+			   
+				iqr_pos = q_75+1.5*iqr if (q_75+1.5*iqr)<max_val else max_val
+				iqr_neg = q_25-1.5*iqr if (q_25-1.5*iqr)>min_val else min_val
+
+
+				
+
+				iqr_pos_arr=[]
+				iqr_neg_arr=[]
+				pvallist_small=[]
+				#mask_use=pd.notnull(df[v])
+
+				for q,m in enumerate(compgroups):
+
+					ttest_vals=self.ttest(df_use,m,v,disease=disease)
+
+
+					mask_dis_stage=(df_use['dis_stage']==m)
+
+					df_use_ds=df_use.loc[mask_dis_stage,]
+
+					max_val=df_use_ds[v].max()
+					min_val=df_use_ds[v].min()
+					q_25=df_use_ds[v].quantile(0.25)
+					q_75=df_use_ds[v].quantile(0.75)
+					med=df_use_ds[v].quantile(0.5)
+					grpsize=df_use_ds.shape[0]
+
+					
+
+					iqr=q_75-q_25
+
+					std_val=round(df_use_ds[v].std(),3)
+
+					iqr_pos = q_75+1.5*iqr if (q_75+1.5*iqr)<max_val else max_val
+					iqr_pos_arr.append(iqr_pos)
+					iqr_neg = q_25-1.5*iqr if (q_25-1.5*iqr)>min_val else min_val
+					iqr_neg_arr.append(iqr_neg)
+
+				   
+					ttest_val_inc=round(df_use_ds[v].mean(),3)#round(ttest_vals[0],3)
+					pval_inc=round(ttest_vals[1],6)
+
+					grpsize_arr.append(grpsize)
+					ttestvals.append(ttest_val_inc)
+					med_vals.append(med)
+					lq_vals.append(q_25)
+					uq_vals.append(q_75)
+
+
+					pvallist.append(pval_inc)
+					pvallist_small.append(pval_inc)
+					varnameslist.append(v)
+					splitnames.append(t)
+					comp_groups.append(m)
+					std_vals.append(std_val)
+
+				#print(pvallist_small)
+				pvals_signs=self.getpval_arr(pval_array=pvallist_small,length=len(compgroups))
+
+				#for k in list(np.arange(len(compgroups))+1):
+
+				
+				for k in [1,2,3]:
+
+				
+					sig=pvals_signs[k]
+
+					if sig !='ns':
+						x1, x2 = 0, k  
+						y, h, col = iqr_pos + (iqr_pos_arr[k]-iqr_neg_arr[k])/5, k*(iqr_pos_arr[k]-iqr_neg_arr[k])/5, 'black'
+						plt.plot([x1, x1, x2, x2], [y, y+h, y+h, y], lw=1.5, c=col)
+						#plt.text((x1+x2)*.5, y+h, 'p= '+str(pvallist_small[k])+' '+str(sig), ha='center', va='bottom', color=col,
+						#	fontsize='24')
+						plt.text((x1+x2)*.5, y+h*0.95, str(sig), ha='center', va='bottom', color=col,
+							fontsize='24')
+
+
+
+
+		plt.savefig('../figures/fig_'+self.date_run+"_"+varnames+'.jpg', dpi=300,bbox_inches='tight')
+		plt.show()
+		
+		pvals_df=pd.DataFrame({'Variable':varnameslist,'Split':splitnames,'Group Size':grpsize_arr,'Years into disease':comp_groups,
+			'Mean':ttestvals,'Median':med_vals,'lower quartile':lq_vals,
+			'upper quartile':uq_vals,'p value':pvallist,'standard deviations':std_vals})
+		outs=dict({'df':df,'pvals_df':pvals_df})
+
+		return outs
+
+
+
 	def disease_traj(self,df=None,labelfile='labels_dates_test.parquet',dis_date='parkins_date',disease='PD',vars=['igf1_f30770_0_0'],
 	splitvar='sex_f31_0_0',agemin=50,agemax=70,labels=['Female','Male'],varnames='IGF1',plots='lineplots',ttest_use=False,
 	agegendnormvars=[],exc_deaths=False,dis_label=True):
@@ -424,7 +673,7 @@ class AnalysisCharts(object):
 		else:
 			colsimport=list(set(list(['eid','age_when_attended_assessment_centre_f21003_0_0',splitvar]+vars)))
 
-		if df==None:
+		if df is None:
 			df_model=pd.read_parquet(self.path+'df_all_final.parquet',columns=colsimport)
 		else:
 			df_model=df.copy()
@@ -435,8 +684,6 @@ class AnalysisCharts(object):
 			labelcols=['eid',dis_date,disease]
 		df_dates=pd.read_parquet(self.path+labelfile)[labelcols]
 		df_model_orig=pd.read_parquet(self.path+'df_model_test.parquet')[['eid','date_of_attending_assessment_centre_f53_0_0']]
-
-
 
 		df_dates['eid']=df_dates['eid'].astype(str)
 		df_model['eid']=df_model['eid'].astype(str)
