@@ -18,6 +18,7 @@ import icd10
 import datetime as dt
 import ast
 from sklearn.preprocessing import StandardScaler
+from pandas.tseries.offsets import DateOffset
 
 class data_proc_main(object):
 	"""
@@ -29,6 +30,7 @@ class data_proc_main(object):
 		Initilising models.
 		"""
 
+		self.date_suff=dt.datetime.today().strftime('%Y-%m-%d')
 		self.year=2021 #latest data's year, month, day
 		self.month=1
 		self.day=31
@@ -38,6 +40,11 @@ class data_proc_main(object):
 		self.min_part_dis=200 #min number of patients with disease x before included
 
 		self.path="/Users/michaelallwright/Dropbox (Sydney Uni)/michael_PhD/Projects/UKB/Data/"
+
+		#temporarily going to need this one
+		self.path="/Users/michaelallwright/Documents/GitHub/UKB/data/"
+		self.path2="/Users/michaelallwright/Documents/GitHub/ukb-dementia-shap/static/"
+		self.path_pain="/Users/michaelallwright/Documents/GitHub/UKB/Pain/data/"
 		self.fullfile='ukb_tp0_new.parquet'
 		self.cols_nonmiss_file='cols80.csv'
 		self.icd10_file='ukb_ICD10.parquet'
@@ -162,6 +169,12 @@ class data_proc_main(object):
 
 		return [col for col in df if string in col]
 
+	def findcols_reg(self,df,string):
+
+		return [col for col in df if re.search(string,col)]
+
+
+
 	def std_scale_newvar(self,df,vars=[],name='inflammation'):
 		for var in vars:
 			trans = StandardScaler()
@@ -198,11 +211,31 @@ class data_proc_main(object):
 		except:
 			pass
 
+	def ukb_icd10(self):
+		df=pd.read_csv('/Users/michaelallwright/Documents/GitHub/UKB/data/icd10list_ukb.csv')
+		df['code']=df['ICD10'].apply(lambda x:x[0:x.find(' ')])
+		df['disease']=df['ICD10'].apply(lambda x:x[x.find(' ')+1:len(x)])
+		df['code']=df['code'].apply(lambda x:x.replace('.',''))
+		df['disease']=df['disease'].apply(lambda x:x.lower())
+		df['disease']=df['disease'].apply(lambda x:x.replace('-',''))
+
+		df=df[['code','disease']]
+
+		return df
+
+	def ukb_icd10_r(self):
+		df=pd.read_csv('/Users/michaelallwright/Documents/GitHub/UKB/data/code_map2.csv')
+		df=df.loc[df['Coding']==19,['Value','Meaning']]
+		df['Meaning']=df['Meaning'].apply(lambda x:x.lower())
+		icd10_lkup_dict=dict(zip(df['Value'],df['Meaning']))
+
+		return icd10_lkup_dict
+
 	def treatment_mapping(self):
 
-		coding4=pd.read_csv(self.path+'coding4.tsv',sep="\t")
-		treat_codes=pd.read_csv(self.path+'medications_codes.csv')
-		df=pd.read_parquet(self.path+'ukb_treatments_test.parquet')
+		coding4=pd.read_csv(self.path2+'coding4.tsv',sep="\t")
+		treat_codes=pd.read_csv(self.path2+'medications_codes.csv')
+		df=pd.read_parquet(self.path2+'ukb_treatments_test.parquet')
 
 		df.fillna(0,inplace=True)
 		df[[col for col in df.columns]]=df[[col for col in df.columns]].astype(int)
@@ -254,19 +287,46 @@ class data_proc_main(object):
 
 		return df_out
 
+
+
 	def specific_disease_label(self,icd10s,disname):
 		df_dis_date=pd.read_parquet(self.path+'df_dis_date_test.parquet')
-		dis_label=pd.DataFrame(df_dis_date[(df_dis_date['disease'].isin(icd10s))].\
+		mask_icd=(df_dis_date['disease'].isin(icd10s))
+		
+		dis_label1=pd.DataFrame(df_dis_date[mask_icd].\
 	groupby('eid').agg({'dis_aft':'max','disease_date':'min'})).reset_index()
+
+		dis_label1[disname]=1
+
+		dis_label1=dis_label1[['eid',disname,'disease_date']]
+
+
+		dis_label2=pd.DataFrame(df_dis_date[mask_icd].\
+	groupby('eid').agg({'dis_bef':'max','disease_date':'min'})).reset_index()
+
+		dis_label2[disname]=-1
+
+		dis_label2=dis_label2[['eid',disname,'disease_date']]
+
+		dis_label=pd.concat([dis_label1,dis_label2],axis=0)
+
 
 		return dis_label
 
 
 
 
-	def dis_date_file(self):
 
-		df=pd.read_parquet('%s%s' % (self.path,self.icd10_file))
+
+	def dis_date_file(self,infile='ukb_ICD10.parquet',outfile='dis_ohe_icd10_test.parquet'):
+
+		df=pd.read_parquet('%s%s' % (self.path,infile))
+		df['eid']=df['eid'].astype(str)
+
+		death_eids=df.loc[pd.notnull(df['date_of_death_f40000_0_0']),'eid'].astype(str)
+
+		df['death']=0
+		df.loc[df['eid'].isin(death_eids),'death']=1
 
 		
 		#format dates and work out age today
@@ -312,15 +372,19 @@ class data_proc_main(object):
 
 		df_dis_date=pd.merge(df_dis,df_date,on=['eid','variable'],how='left')
 
-		df_dis_date=pd.merge(df_dis_date,df[['eid','Age_Today','date_of_attending_assessment_centre_f53_0_0']])
+		df_dis_date=pd.merge(df_dis_date,df[['eid','Age_Today','date_of_attending_assessment_centre_f53_0_0','death']])
 		df_dis_date['Age_disease']=df_dis_date['Age_Today']-\
 		(dt.datetime(self.year, self.month, self.day)-pd.to_datetime(df_dis_date['dis_date']))\
 		.dt.days/365.25
 
 		df_dis_date['disease_name']=df_dis_date['disease'].apply(self.returndesc)
 		df_dis_date['disease_block']=df_dis_date['disease'].apply(self.returndescblock)
+
+		dictmap=self.ukb_icd10_r()
+		df_dis_date['disease_name_new']=df_dis_date['disease'].map(dictmap)
 		df_dis_date.rename(columns={'date_of_attending_assessment_centre_f53_0_0':'date_assess','dis_date':'disease_date'}\
 	,inplace=True)
+	
 
 		#create dummie variables for diseases if before assessment centre (dis_bef) for indep vars and if after 2 years/
 		#before 10 years (mask_aft) for dep variable
@@ -344,7 +408,8 @@ class data_proc_main(object):
 		df_dis_date['total_bef']=df_dis_date.groupby('disease')['dis_bef'].transform('sum')
 		df_dis_date['total_aft']=df_dis_date.groupby('disease')['dis_aft'].transform('sum')
 
-	
+		df_dis_date.to_parquet(self.path+'df_dis_date_test2.parquet')
+
 		#mapping of certain diseases by their codes in dis_map above
 		for var in self.dis_map:
 			df_dis_date[var]=0
@@ -379,11 +444,78 @@ class data_proc_main(object):
 		dis_ohe_icd10.fillna(0,inplace=True)
 
 		#output files
-		df_dis_date.to_parquet(self.path+'df_dis_date_test.parquet')
-		dis_ohe_icd10.to_parquet(self.path+'dis_ohe_icd10_test.parquet')
+		#df_dis_date.to_parquet(self.path+'df_dis_date_test.parquet')
+		dis_ohe_icd10.to_parquet(self.path+outfile)
 
 
 		return df_dis_date,dis_ohe_icd10
+
+	def disease_labels_ICD10s(self,icd10s=['G309', 'G308', 'G300', 'G301'],disease='AD',out='test.parquet',strcont=False):
+
+		df_dis_date_test=pd.read_parquet(self.path+'df_dis_date_test2.parquet')
+		
+		if strcont:
+			dis_lab=df_dis_date_test[(df_dis_date_test['disease'].str.contains(icd10s,regex=True))]
+		else:
+			dis_lab=df_dis_date_test[(df_dis_date_test['disease'].isin(icd10s))]
+		print(dis_lab['disease'].value_counts())
+
+		dis_lab=pd.DataFrame(dis_lab.groupby('eid')['disease_date','date_assess'].min()).reset_index()
+		mask=(dis_lab['disease_date']>dis_lab['date_assess']+ DateOffset(years=2))
+		dis_lab['time_to_'+disease]=(dis_lab['disease_date']-dis_lab['date_assess']).dt.days/365.25
+		dis_lab[disease]=-1
+		dis_lab[disease][mask]=1
+
+		dis_lab.rename(columns={'disease_date':disease+'_date'},inplace=True)
+
+		dis_lab.to_parquet(self.path+out)
+
+		return dis_lab
+
+	def disease_labels_ICD10s2(self,icd10s=['G309', 'G308', 'G300', 'G301'],disease='AD',out='test.parquet',strcont=False,bef=False,
+		years=2,outfile=True):
+
+		df_dis_date_test=pd.read_parquet(self.path+'df_dis_date_test2.parquet')
+		
+		if strcont:
+			dis_lab=df_dis_date_test[(df_dis_date_test['disease'].str.contains(icd10s,regex=True))]
+		else:
+			dis_lab=df_dis_date_test[(df_dis_date_test['disease'].isin(icd10s))]
+		
+		dis_lab_full=dis_lab.copy()
+
+		dis_lab=pd.DataFrame(dis_lab.groupby('eid')['disease_date','date_assess'].min()).reset_index()
+
+		if bef:
+			mask=(dis_lab['disease_date']<dis_lab['date_assess']+ DateOffset(years=years))
+			word='time_since_'
+			dis_lab[word+disease]=(dis_lab['date_assess']-dis_lab['disease_date']).dt.days/365.25
+
+			mask2=(dis_lab_full['disease_date']<dis_lab_full['date_assess']+ DateOffset(years=years))
+			word='time_since_'
+			dis_lab_full[word+disease]=(dis_lab_full['date_assess']-dis_lab_full['disease_date']).dt.days/365.25
+
+		else:
+			mask=(dis_lab['disease_date']>dis_lab['date_assess']+ DateOffset(years=years))
+			word='time_to_'
+			dis_lab[word+disease]=(dis_lab['disease_date']-dis_lab['date_assess']).dt.days/365.25
+
+			mask2=(dis_lab_full['disease_date']>dis_lab_full['date_assess']+ DateOffset(years=years))
+			word='time_to_'
+			dis_lab_full[word+disease]=(dis_lab_full['disease_date']-dis_lab_full['date_assess']).dt.days/365.25
+
+		dis_lab[disease]=-1
+		dis_lab[disease][mask]=1
+
+		dis_lab.rename(columns={'disease_date':disease+'_date'},inplace=True)
+
+		dis_lab['eid']=dis_lab['eid'].astype(str)
+		dis_lab_full['eid']=dis_lab_full['eid'].astype(str)
+
+		if outfile:
+			dis_lab.to_parquet(self.path+out)
+
+		return dis_lab,dis_lab_full
 
 	def famhistory(self):
 
@@ -548,7 +680,7 @@ class data_proc_main(object):
 	def create_dic(self,df,maxnum=15):
 		return [(col,set(df[col][pd.notnull(df[col])].unique())) for col in df.columns if len(df[col].unique())<=maxnum]
 
-	def ordinal_lookup(self,df):
+	def ordinal_lookup(self,df,outfile='vallistcomp_test.csv'):
 		list1=self.create_dic(df,maxnum=15)
 		valslist=pd.DataFrame(list1)
 		valslist.columns=['column','values']
@@ -556,9 +688,9 @@ class data_proc_main(object):
 		vallist2=pd.DataFrame(valslist['values'].value_counts()).reset_index()
 		vallist2.columns=['values','recs']
 		vallist2['merge']=vallist2['values'].astype(str)
-		vallistcomp=pd.merge(valslist,vallist2,on='merge',how='left')
+		vallistcomp=pd.merge(valslist['column'],vallist2,on='merge',how='left')
 		vallistcomp.sort_values(by='recs',ascending=False,inplace=True)
-		vallistcomp.to_csv(self.path+'vallistcomp_test.csv')
+		vallistcomp.to_csv(self.path+outfile)
 
 		return vallistcomp
 
@@ -634,12 +766,128 @@ class data_proc_main(object):
 		excluded_vars=excluded_vars+excvars
 		cts_df=self.cts_data(df)
 		df_ord=self.ord_data(df)
-		df_model=pd.merge(df_ord,cts_df,on='eid',how='left')
-		df_model=pd.merge(df_model,ohe_df,on='eid',how='left')
-		df_model=pd.merge(df[self.keycols],df_model,on='eid',how='left')
-		df_model.to_parquet(self.path+'df_model_test.parquet')
 
-		return df_model,excluded_vars
+		df_fam_pddem=pd.read_parquet(self.path+'df_fam_pddem.parquet')
+		apoe4_df=pd.read_parquet(self.path+'genotype.parquet')
+		ukb_treatments=pd.read_parquet(self.path+'treatments_test.parquet')
+
+
+
+		for i,df in enumerate([df_fam_pddem,apoe4_df,ukb_treatments]):
+			df['eid']=df['eid'].astype(str)	
+
+
+
+		df=pd.merge(df_ord,cts_df,on='eid',how='left')
+		df=pd.merge(df_model,ohe_df,on='eid',how='left')
+		
+		df=pd.merge(df,ukb_treatments,on='eid',how='left')
+		df=pd.merge(df,apoe4_df,on='eid',how='left')
+		df=pd.merge(df,df_fam_pddem,on='eid',how='left')
+
+
+		df.to_parquet(self.path+'df_model_test.parquet')
+
+		return df,excluded_vars
+
+	def mod_data_append(self):
+		df=pd.read_parquet(self.path+'df_model_test.parquet')
+		df['eid']=df['eid'].astype(str)
+
+		print(df.shape)
+
+		df_fam_pddem=pd.read_parquet(self.path+'df_fam_pddem.parquet')
+		apoe4_df=pd.read_parquet(self.path+'genotype.parquet')
+
+		print(apoe4_df.columns)
+		ukb_treatments=pd.read_parquet(self.path+'treatments_test.parquet')
+
+		for i,df1 in enumerate([df_fam_pddem,apoe4_df,ukb_treatments]):
+			df1['eid']=df1['eid'].astype(str)	
+
+		print(df.shape)
+
+		df=pd.merge(df,ukb_treatments,on='eid',how='left')
+		df=pd.merge(df,apoe4_df,on='eid',how='left')
+		df=pd.merge(df,df_fam_pddem,on='eid',how='left')
+
+		print(df.shape)
+
+		df['NLR']=df['neutrophill_count_f30140_0_0']/df['lymphocyte_count_f30120_0_0']
+
+		df.to_parquet(self.path+'df_model_test_treat.parquet')
+
+		return df
+
+	
+
+	def data_merge_dis(self,remwords='alzhei|dementia',disease='AD',icd10s=['G309', 'G308', 'G300', 'G301'],
+		outfile=None,use_icd10=True,strcont=False,bef=False,years=2):
+
+		#label with the disease label you want and enter a list of correspoonding ICD10s
+		#df_lab=self.disease_labels_ICD10s(icd10s=icd10s,disease=disease,strcont=strcont)
+
+		df_lab=self.disease_labels_ICD10s2(icd10s=icd10s,disease=disease,strcont=strcont,bef=bef,\
+	years=years,outfile=outfile)[0]
+
+
+		df_model=pd.read_parquet(self.path+'df_model.parquet')
+		ukb_treatments=pd.read_parquet(self.path+'treatments_test.parquet')
+		dis_ohe=pd.read_parquet(self.path+'dis_ohe_test.parquet')
+		dis_ohe_icd10=pd.read_parquet(self.path+'dis_ohe_icd10_test.parquet')
+		df_fam_pddem=pd.read_parquet(self.path+'df_fam_pddem.parquet')
+		deaths=pd.read_parquet(self.path+'deaths_test.parquet')
+
+		apoe4_df=pd.read_parquet(self.path+'genotype.parquet')
+		apoe4_df=apoe4_df[pd.notnull(apoe4_df['Genotype'])]
+		apoe4_df=self.onehotencoder(apoe4_df,['Genotype'],[],maxrecs=10,mincount=0.1,incspec=False)[0]
+
+		deaths=deaths[(deaths['date_of_death_f40000_0_0']!='nan')]
+		deaths['date_of_death_f40000_0_0']=pd.to_datetime(deaths['date_of_death_f40000_0_0'])
+
+		for i,df in enumerate([df_lab,dis_ohe,dis_ohe_icd10,deaths,df_model,ukb_treatments,apoe4_df,df_fam_pddem]):
+			df['eid']=df['eid'].astype(str)	
+
+		#deaths not of the condition - we will include deaths from the condition
+		#where condition was developed prior to 2 year interval
+
+		df=pd.merge(df_model,ukb_treatments,on='eid',how='left')
+		df=pd.merge(df,apoe4_df,on='eid',how='left')
+		df=pd.merge(df,df_fam_pddem,on='eid',how='left')
+
+		if bef:
+			word='since'
+		else:
+			word='to'
+		df=pd.merge(df,df_lab[['eid',disease,'time_'+word+'_'+disease]],on='eid',how='left')
+
+		if use_icd10:
+			df=pd.merge(df,dis_ohe_icd10,on='eid',how='inner')
+		else:
+			df=pd.merge(df,dis_ohe,on='eid',how='inner')
+
+
+
+		nondis_deaths=list(deaths['eid'][~(deaths['eid'].isin(df_lab['eid']))])
+		dis_befores=list(df_lab['eid'][(df_lab[disease]==-1)])
+
+		eid_excludes=list(set(nondis_deaths+dis_befores))
+
+		col_includes=list(c for c in df.columns if not re.search(remwords,c) or c==disease)
+
+		df[disease].fillna(0,inplace=True)
+
+		df=df[~(df['eid'].isin(eid_excludes))]
+
+		df=df[col_includes]
+
+		df['eid']=df['eid'].astype(str)
+
+		if outfile:
+			df.to_parquet(self.path+outfile)
+
+		return df
+
 
 	def data_merge(self,use_icd10=True):
 
@@ -677,9 +925,12 @@ class data_proc_main(object):
 		eids_exc_dem=list(dem_excs)+list(death_exc_dem)
 
 		PD_excs=list(excludes[(excludes[[col for col in excludes.columns if 'parkinson' in col]].sum(axis=1)>0)]['eid'])
-		death_exc_pd=list(pd.merge(deaths,labels[mask_pd],on='eid',how='inner')['eid'])
-		eids_exc_pd=list(PD_excs)+list(death_exc_pd)
 
+		cols_oth_pd=[c for c in labels.columns if 'parkins' in c and 'g20' not in c]
+		mask=(labels[cols_oth_pd].sum(axis=1)>0)
+		exc_PD_sim=list(labels.loc[mask,'eid'])
+		death_exc_pd=list(pd.merge(deaths,labels[mask_pd],on='eid',how='inner')['eid'])
+		eids_exc_pd=list(set(list(PD_excs)+list(death_exc_pd)+list(exc_PD_sim)))
 		AD_excs=list(excludes[(excludes[[col for col in excludes.columns if 'AD' in col]]\
 		.sum(axis=1)>0)]['eid'])+dem_excs
 		death_exc_ad=list(pd.merge(deaths,labels[mask_ad],on='eid',how='inner')['eid'])
@@ -695,7 +946,9 @@ class data_proc_main(object):
 		df=pd.merge(df,df_fam_pddem,on='eid',how='left')
 
 		labels['dementia']=labels[[col for col in labels.columns if 'dementia' in col]].max(axis=1)
-		labels['PD']=labels[[col for col in labels.columns if 'parkinson' in col]].max(axis=1)
+		#labels['PD']=labels[[col for col in labels.columns if 'parkinson' in col]].max(axis=1)
+
+		labels['PD']=labels[[col for col in labels.columns if 'parkinson' in col and 'g20' in col]].max(axis=1)
 		labels['AD']=labels[[col for col in labels.columns if 'alzh' in col]].max(axis=1)
 
 		df=pd.merge(df,labels[['eid','dementia','PD','AD']],on='eid',how='inner')
@@ -714,9 +967,11 @@ class data_proc_main(object):
 		df_ad.drop(columns=[col for col in self.findcols(df_dem,'dement') if col!='AD'],inplace=True)
 
 		df_dem.to_parquet(self.path+'df_dem_20211024.parquet')
-		df_pd.to_parquet(self.path+'df_pd_20211024.parquet')
-		df_ad.to_parquet(self.path+'df_ad_20211024.parquet')
-		df.to_parquet(self.path+'df_all_20211024.parquet')
+		
+		#df_ad.to_parquet(self.path+'df_ad_20211024.parquet')
+		#df.to_parquet(self.path+'df_all_20211024.parquet')
+		#df_pd.to_parquet(self.path+'df_pd_20211024.parquet')
+		df_pd.to_parquet(self.path+'df_pd_20220510.parquet')
 
 		return df_dem,df_pd,df_ad,df
 
@@ -748,8 +1003,108 @@ class data_proc_main(object):
 				grip=1
 		return grip
 
+	def studyvars_add(self,df):
+
+		PD_spec=pd.read_parquet('%s%s' % (self.path,'PD_specific.parquet'))
+		PD_spec=PD_spec[[c for c in PD_spec.columns if c not in df.columns or c=='eid']]
+		df=pd.merge(df,PD_spec,on='eid',how='left')
+		#mapping of PD variables
+		df['pesticide_exposure']=df['worked_with_pesticides_f22614_0_0'].map(self.pest_map)
+		df['urban_rural']=df['home_area_population_density_urban_or_rural_f20118_0_0'].map(self.urb_rur)
+
+
+		df['pesticide_exposure']=df['worked_with_pesticides_f22614_0_0'].map(self.pest_map)
+		df['urban_rural']=df['home_area_population_density_urban_or_rural_f20118_0_0'].map(self.urb_rur)
+
+
+		df['melanoma']=df[self.findcols(df,'melano')].max(axis=1)
+
+		#remapping of these specific variables to ordinal
+		df=self.remap_var(df=df,var="APOE4_Carriers",dictvar=self.genos,drop=False)
+		#df=self.remap_var(df=df,var="Qualif_Score",dictvar=self.qualif,drop=True)
+
+		#neurochemical ratios
+		df['AST_ALT_ratio']=df['aspartate_aminotransferase_f30650_0_0']/\
+		df['alanine_aminotransferase_f30620_0_0']
+
+		mask_inf=(df['lymphocyte_count_f30120_0_0']==0)|pd.isnull(df['lymphocyte_count_f30120_0_0'])
+		df['neutrophill_lymphocyte_ratio']=np.nan
+		df['neutrophill_lymphocyte_ratio'][~mask_inf]=df['neutrophill_count_f30140_0_0']/\
+		df['lymphocyte_count_f30120_0_0']
+
+		df['diabetes']=df[self.findcols(df,'diabetes')].max(axis=1)
+
+		df['pollution']=df[['nitrogen_dioxide_air_pollution_2010_f24003_0_0',
+		'nitrogen_oxides_air_pollution_2010_f24004_0_0',
+		'particulate_matter_air_pollution_pm10_2010_f24005_0_0',
+		'particulate_matter_air_pollution_pm25_2010_f24006_0_0',
+		'particulate_matter_air_pollution_pm25_absorbance_2010_f24007_0_0',
+		'particulate_matter_air_pollution_2510um_2010_f24008_0_0',
+		'nitrogen_dioxide_air_pollution_2005_f24016_0_0',
+		'nitrogen_dioxide_air_pollution_2006_f24017_0_0',
+		'nitrogen_dioxide_air_pollution_2007_f24018_0_0']].mean(axis=1)
+
+		df['low_activity']=df['ipaq_activity_group_f22032_0_0'].apply(lambda x:1 if x=='low' else 0)
+
+		colsfrail=['weight_change_compared_with_1_year_ago_f2306','recent_feelings_of_tiredness_or_low_energy_f20519',
+		'ipaq_activity_group_f22032_0_0','usual_walking_pace_f924','hand_grip_strength_left_f46','hand_grip_strength_right_f47']
+
+
+		df['sedentary_time']=df[[ 'time_spent_watching_television_tv_f1070_0_0',
+		'time_spent_using_computer_f1080_0_0',
+		'time_spent_driving_f1090_0_0']].sum(axis=1)
+
+		#frailty calculations
+		
+		colsfrail=['weight_change_compared_with_1_year_ago_f2306','recent_feelings_of_tiredness_or_low_energy_f20519',
+		'ipaq_activity_group_f22032_0_0','usual_walking_pace_f924','hand_grip_strength_left_f46','hand_grip_strength_right_f47']
+
+		df['low_activity']=df['ipaq_activity_group_f22032_0_0'].apply(lambda x:1 if x=='low' else 0)
+
+		df['grips_frail']=df[['sex_f31_0_0','body_mass_index_bmi_f21001_0_0','hand_grip_strength_left_f46_0_0',\
+'hand_grip_strength_right_f47_0_0']].apply(lambda x:self.frailty_index(x['sex_f31_0_0'],x['body_mass_index_bmi_f21001_0_0'],\
+ x['hand_grip_strength_left_f46_0_0'],x['hand_grip_strength_right_f47_0_0']),axis=1)
+
+		df['exhaust_frail']=df['frequency_of_tiredness_lethargy_in_last_2_weeks_f2080_0_0'].isin([2,3]).astype(int)
+		df['walk_frail']=df['usual_walking_pace_f924_0_0'].isin([0]).astype(int)
+		df['ipaq_frail']=df['ipaq_activity_group_f22032_0_0'].isin([0]).astype(int)
+
+		df['frailty_score']=\
+		df[['grips_frail','exhaust_frail','walk_frail','ipaq_frail']]\
+		.sum(axis=1)
+		df['frailty_index']=df['frailty_score'].apply(lambda x:0 if x<1 else
+																(2 if x>=3 else 1))
+
+		df['hypertension']=df[self.findcols(df,'hypertension')].max(axis=1)
+
+
+		df['alcohol']=np.nan
+		alc_cols=['alcohol_intake_frequency_f1558_0_0_Daily or almost daily',
+		'alcohol_intake_frequency_f1558_0_0_Never',
+		'alcohol_intake_frequency_f1558_0_0_Once or twice a week',
+		'alcohol_intake_frequency_f1558_0_0_One to three times a month',
+		'alcohol_intake_frequency_f1558_0_0_Three or four times a week']
+
+		for col in alc_cols:
+			df['alcohol'][(df[col]==1)]=self.alc_map[col]
+
+		df['depressed']=df[['Major depressive disorder, recurrent, unspecified',
+		'Major depressive disorder, single episode, moderate',
+		'Major depressive disorder, single episode, unspecified']].max(axis=1)
+
+
+		colskeep=[c for c in df.columns if re.search('int|float',str(df[c].dtype)) or c=='eid' or 'date' in c]
+
+		return df[colskeep]
+
+
 		
 	def studyvars(self,depvar="dementia"):
+
+		
+
+		
+		
 
 		"""
 		this function maps all the columns used in previous studies and meta-analyses
@@ -763,6 +1118,17 @@ class data_proc_main(object):
 			df=pd.read_parquet(self.path+'df_dem_20210924.parquet')
 			mask=(df['PD']==1)
 			df=df[~mask]
+
+		if depvar=="AD":
+			#df=pd.read_parquet(self.path+'df_ad_20211024.parquet')
+			df=pd.read_parquet(self.path+'df_ad_20211214.parquet')
+
+			if 'PD' in df.columns:
+				mask=(df['PD']==1)
+				df=df[~mask]
+
+
+			
 
 		elif depvar=="PD":
 			PD_spec=pd.read_parquet('%s%s' % (self.path,'PD_specific.parquet'))
@@ -897,6 +1263,9 @@ class data_proc_main(object):
 
 
 
+
+
+
 		if depvar=="dementia":
 
 			df_study=df[studycols_dem]
@@ -904,6 +1273,16 @@ class data_proc_main(object):
 			df_lancet.to_parquet(self.path+'df_dem_lancet_Oct.parquet')
 			df_study.to_parquet(self.path+'df_dem_frailty_study_Oct.parquet')
 			df.to_parquet(self.path+'df_dem_final.parquet')
+
+			df_tuple=[df,df_study,df_lancet]
+
+		if depvar=="AD":
+
+			df_study=df[[c for c in studycols_dem if 'dementia' not in c]+['AD']]
+			df_lancet=df[[c for c in cols_lancet if 'dementia' not in c]+['AD']]
+			df_lancet.to_parquet(self.path+'df_AD_lancet_Oct.parquet')
+			df_study.to_parquet(self.path+'df_AD_frailty_study_Oct.parquet')
+			df.to_parquet(self.path+'df_AD_final.parquet')
 
 			df_tuple=[df,df_study,df_lancet]
 
@@ -917,7 +1296,7 @@ class data_proc_main(object):
 		elif depvar=="all":
 
 			df.drop(columns=[col for col in df.columns if col!='eid' and re.search('obj',str(df[col].dtype))],inplace=True)
-			df.to_parquet(self.path+'df_all_final.parquet')
+			df.to_parquet(self.path+'df_all_final'+self.date_suff+'.parquet')
 			df_tuple=[df]
 
 
