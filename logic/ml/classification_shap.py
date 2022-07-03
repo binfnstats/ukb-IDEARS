@@ -178,7 +178,7 @@ class IDEARs_funcs(object):
 		'neutrophill_count_f30140_0_0':'Inflammation',
 		'neutrophill_percentage_f30200_0_0':'Inflammation',
 		'igf1_f30770_0_0':'Blood Biomarkers',
-		'suffer_from_nerves_f2010_0_0':'Biometric',
+		'suffer_from_nerves_f2010_0_0':'Other',
 		'avg_duration_to_first_press_of_snapbutton_in_each_round':'Biometric',
 		'neutrophill_lymphocyte_ratio':'Inflammation',
 		'creactive_protein_f30710_0_0':'Inflammation',
@@ -201,6 +201,7 @@ class IDEARs_funcs(object):
 		'Total ICD10 Conditions at baseline':'Frailty',
 		'waist_circumference_f48_0_0':'Cardiovascular',
 		'sex_f31_0_0':'Demographic',
+		'summed_minutes_activity_f22034_0_0':'Other',
 		'forced_vital_capacity_fvc_f3062_0_0':'Cardiovascular',
 		'standing_height_f50_0_0':'Biometric',
 		'mean_reticulocyte_volume_f30260_0_0':'Blood Biomarkers',
@@ -429,7 +430,9 @@ class IDEARs_funcs(object):
 		
 		df=self.col_spec_chars(df)
 		
-		dropvars=[col for col in df.columns if col in dropcols or re.search(col,wordsremove)]
+		dropvars=[c for c in df.columns if c in dropcols or re.search(c,wordsremove) and depvar not in c]
+
+
 
 		if len(dropcols)>0:
 			df_out=df.drop(dropvars,axis=1)
@@ -637,8 +640,12 @@ class IDEARs_funcs(object):
 
 	def simpletrain(self,df,model,dropcols,depvar,wordsremove,resize,resizeratio=20,shapshow=1):
 		
+		#print(df['PD'].sum(),"!!")
+
 		df_out=self.preprocess(df,dropcols,depvar,wordsremove,resize,resizeratio)
 
+		
+		
 		
 		
 		X=df_out.drop(columns=['eid',depvar])
@@ -855,6 +862,10 @@ class IDEARs_funcs(object):
 		if list:
 			df=pd.concat(df,axis=0)
 		
+		#remove features which are at 1st time period
+		mask=(df['v2'].apply(lambda x:x[len(x)-2:len(x)])=='_1')
+		df=df.loc[~mask,]
+
 		df['recs']=df.groupby('Variable')['SHAP_abs'].transform('count')
 		df=df[(df['recs']>minrecs)]
 
@@ -867,8 +878,11 @@ class IDEARs_funcs(object):
 
 		#df['mean_shap']=df.groupby('Variable')['SHAP_abs'].transform('mean')
 		#df['rank']=df.groupby('Variable')['mean_shap'].rank()
-		df_sum=pd.DataFrame(df.groupby('Variable')['SHAP_abs'].mean()).reset_index()
-		df_sum.columns=['Variable','mean_shap']
+		df_sum=pd.DataFrame(df.groupby('Variable').agg({'SHAP_abs':['sum','count']})).reset_index()
+		df_sum.columns=['Variable','SHAP_abs_sum','recs']
+		df_sum['mean_shap']=df_sum['SHAP_abs_sum']/df_sum['recs']
+		df_sum.drop(columns=['SHAP_abs_sum','recs'],inplace=True)
+
 		df_sum['rank']=df_sum['mean_shap'].rank(ascending=False)
 		df=pd.merge(df,df_sum,on='Variable',how='left')
 
@@ -909,10 +923,15 @@ class IDEARs_funcs(object):
 		
 		plt.show()
 		
-		df_out=pd.DataFrame(df.groupby(vars).agg({'SHAP_abs':'mean','Corr':'mean','rank':'mean'})).reset_index()
+		df_out=pd.DataFrame(df.groupby(vars).agg({'SHAP_abs':'mean','Corr':'mean'})).reset_index()
 
-		df_out.columns=vars+['shap_abs'+lab,'Corr'+lab,'rank'+lab]
+		df_out.columns=vars+['shap_abs'+lab,'Corr'+lab]
 		df_out.sort_values(by='shap_abs'+lab,ascending=False,inplace=True)
+
+		df_out.columns=vars+['Mean SHAP Score','SHAP Correlation (negative=protective)']
+
+		if 'v2' in vars:
+			df_out['Type']=df_out['v2'].map(self.variablemap_group)
 		
 		
 		
@@ -921,29 +940,49 @@ class IDEARs_funcs(object):
 
 	
 
-	def get_full_feats(self,arr):
-	    df_full=pd.DataFrame([])
-	    for i,a in enumerate(arr):
-	        a['run']=str(i)
-	        df_full=pd.concat([df_full,a],axis=0)
-	    
-	    
-	    feats_out=pd.DataFrame(df_full.groupby('v2').agg({'SHAP_abs':['sum','mean','std'],'Corr':'sum'})).reset_index()
-	    feats_out.columns=['Variable','SHAP_sum','SHAP_mean','SHAP_std','Corr']
-	    feats_out['SHAP_mean_recalc']=feats_out['SHAP_sum']/len(arr)
-	    feats_out['Corr']=feats_out['Corr']/len(arr)
-	    feats_out.sort_values(by='SHAP_mean_recalc',ascending=False,inplace=True)   
+	def get_full_feats(self,arr,minrecs=0):
+		df_full=pd.DataFrame([])
+		for i,a in enumerate(arr):
+			a['run']=str(i)
+			df_full=pd.concat([df_full,a],axis=0)
+		
+
+		#remove features which are at 1st time period
+		mask=(df_full['v2'].apply(lambda x:x[len(x)-2:len(x)])=='_1')
+		df_full=df_full.loc[~mask,]
+		
+
+		feats_out=pd.DataFrame(df_full.groupby('v2').agg({'SHAP_abs':['sum','mean','std','count'],'Corr':'sum'})).reset_index()
+		feats_out.columns=['Variable','SHAP_sum','SHAP_mean','SHAP_std','recs','Corr']
+		feats_out['SHAP_mean_recalc']=feats_out['SHAP_sum']/len(arr)
+		
+		feats_out['Corr']=feats_out['Corr']/len(arr)
+		feats_out.sort_values(by='SHAP_mean',ascending=False,inplace=True)   
 
 
-	    feats_out['Variable_group']=feats_out['Variable'].map(self.variablemap_group)
+		feats_out['Variable_group']=feats_out['Variable'].map(self.variablemap_group)
 
-	    mask=(feats_out['Variable']=='systolic_blood_pressure_automated_reading_f4080_0_1')
-	    feats_out=feats_out.loc[~mask,]
-	    feats_out['Variable']=feats_out['Variable'].apply(self.mapvar)
+		
+	
+		feats_out['Variable']=feats_out['Variable'].apply(self.mapvar)
 
-	    feats_out=feats_out[['Variable','SHAP_mean_recalc','SHAP_std','Corr','Variable_group']]
+		feats_out=feats_out[['Variable','SHAP_sum','SHAP_mean','SHAP_mean_recalc','SHAP_std','Corr','recs','Variable_group']]
 
-	    return feats_out
+		
+
+		feats_out["Percentage runs in top 25"]=feats_out['recs']/len(arr)
+
+		mask=(feats_out['recs']>minrecs)
+		feats_out=feats_out.loc[mask,]
+
+		feats_out['rank']=np.arange(feats_out.shape[0])+1
+		feats_out['Variable2']=feats_out['rank'].astype(str)+' '+feats_out['Variable']
+		
+
+		feats_out=feats_out[['Variable2','Variable','SHAP_mean','SHAP_std','Corr','Percentage runs in top 25']]
+		feats_out.columns=['Variable2','Variable','Mean SHAP Score','Standard Deviation SHAP Score','SHAP Correlation (negative=protective)','Percentage runs in top 25']
+
+		return feats_out
 
 
 

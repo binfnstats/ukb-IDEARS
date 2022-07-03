@@ -109,7 +109,9 @@ class AnalysisCharts(object):
 		return df_sum
 
 	def agenorm(self,df,var,normvar='age_when_attended_assessment_centre_f21003_0_0'):
-		df_sum=pd.DataFrame(df.groupby([normvar]).agg({var:['mean']})).reset_index()
+
+		df2=df.loc[pd.notnull(df[var])&(df[var]!=np.inf)]
+		df_sum=pd.DataFrame(df2.groupby([normvar]).agg({var:['mean']})).reset_index()
 		df_sum.columns=[normvar,'mean'+var]
 
 		df=pd.merge(df,df_sum,on=normvar,how='left')
@@ -482,6 +484,7 @@ class AnalysisCharts(object):
 		compgroups=list(['No '+disease,'-10>-5','-5>0','0>5'])
 
 		cols_use=['eid','years_'+disease,disease,splitvar,agevar]+vars
+
 		mask=((df['years_'+disease]<=max_dis_aft)&(df['years_'+disease]>=min_dis_bef))|pd.isnull(df['years_'+disease])
 		df=df.loc[mask,cols_use]
 
@@ -494,6 +497,10 @@ class AnalysisCharts(object):
 		compgroups=[c for c in compgroups if c in list(df['dis_stage'].unique())]
 
 		#print(compgroups)
+
+		for v in vars:
+			print(v)
+			print(df[v].sample(10))
 
 
 		for a in agenormvars:
@@ -534,15 +541,19 @@ class AnalysisCharts(object):
 				#max_mask=(df[v]<df[v].quantile(0.99))
 
 
-				mask=(pd.notnull(df[v]))&(df[splitvar]==t)&(df[v]!=np.inf)
+				mask=(pd.notnull(df[v]))&(df[v]!=np.inf)&(df[v]!=np.nan)&(df[splitvar]==t)
 
 				
-				ax=fig.add_subplot(grid[i, j])
-				avg=df.loc[mask,v].mean()
-
 				
 
 				df_use=df.loc[mask,]
+
+				ax=fig.add_subplot(grid[i, j])
+				avg=df_use[v].mean()
+
+				print(v,df_use[v].max())
+				
+
 				df_use.sort_values(by='dis_stage',inplace=True)
 				
 
