@@ -35,37 +35,17 @@ Then on Windows, run ```startlocal_woDocker.bat``` and on Linux, run ```startloc
 
 ## Codebase Structure
 
+data_gen.py is used to perform ETL on the data and to create the model datasets
+data_proc.py is used for extra data processing including the creation of normalised datasets
+ml.py is used to run the models including logistic regression, XGBoost and for model interpretability using SHAP
+analysis.py is used to create charts, perform extra statistical tests including paired t tests
+
 ### Overview
 Import modules etc.
 
 ### Directory Tree and Explanations
 
 This folder shows the implementation of the IDEARs platform.
-
-```
-📦ukb_IDEARS-pipeline-poc
- ┣ 
- ┃ ┣ 📂core
- ┃ ┃ ┣ 📂logic
- ┃ ┃ ┃ ┣ 📂data processing        
- ┃ ┃ ┃ ┃  ┣  📜data_import.py
- ┃ ┃ ┃ ┃  ┣  📜data_import.py  
- ┃ ┃ ┃ ┗ 📂ml      
- ┃ ┃ ┣ 📂models
- ┃ ┃ ┃ ┣ 📜bulkresponse.py
- ┃ ┃ ┃ ┣ 📜requests.py
- ┃ ┃ ┃ ┗ 📜response.py
- ┃ ┃ ┗ 📜config.py
- ┃ ┣ 
- ┣ 📜config.yaml
- ┣ 📜requirements.txt
- ┣ 📜main.py
- ┣ 📜README.md
- ┣
-```
-
-
-## The Roadmap
 
 
 ## Enquiries
