@@ -1,9 +1,8 @@
-# ukb-dementia-shap
- UKB dementia, AD and PD classification and SHAP
-
-# Models to run
-
 # IDEARS - Integrated Disease Explanation and Associations Risk Scoring
+
+ Applies to the UKB datasetes, UKB dementia, AD and PD classification and SHAP
+
+
 
 ## Overview
 
@@ -39,6 +38,10 @@ data_gen.py is used to perform ETL on the data and to create the model datasets
 data_proc.py is used for extra data processing including the creation of normalised datasets
 ml.py is used to run the models including logistic regression, XGBoost and for model interpretability using SHAP
 analysis.py is used to create charts, perform extra statistical tests including paired t tests
+
+The jupyter notebooks used for AD are:
+
+AD_ml_part_1.ipynb and AD_ml_part_2.ipynb
 
 ### Overview
 Import modules etc.
