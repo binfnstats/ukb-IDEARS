@@ -28,7 +28,7 @@ https://www.anaconda.com/products/individual
 
 3. Acticate the environment:
 
-```conda activate frollo-py-pipeline-env```
+```conda activate conda-env```
 
 Then on Windows, run ```startlocal_woDocker.bat``` and on Linux, run ```startlocal_woDocker.sh```
 
