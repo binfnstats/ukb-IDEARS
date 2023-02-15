@@ -34,14 +34,15 @@ Then on Windows, run ```startlocal_woDocker.bat``` and on Linux, run ```startloc
 
 ## Codebase Structure
 
-data_gen.py is used to perform ETL on the data and to create the model datasets
-data_proc.py is used for extra data processing including the creation of normalised datasets
-ml.py is used to run the models including logistic regression, XGBoost and for model interpretability using SHAP
-analysis.py is used to create charts, perform extra statistical tests including paired t tests
+* data_gen.py is used to perform ETL on the data and to create the model datasets
+* data_proc.py is used for extra data processing including the creation of normalised datasets
+* ml.py is used to run the models including logistic regression, XGBoost and for model interpretability using SHAP
+* analysis.py is used to create charts, perform extra statistical tests including paired t tests
 
 The jupyter notebooks used for AD are:
 
-AD_ml_part_1.ipynb and AD_ml_part_2.ipynb
+* AD_ml_part_1.ipynb 
+* Master_ml.ipynb
 
 ### Overview
 Import modules etc.
