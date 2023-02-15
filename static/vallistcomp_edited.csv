@@ -1,0 +1,235 @@
+,column,merge,recs,Do
+104,mean_corpuscular_haemoglobin_freezethaw_cycles_f30051_0_0,{0.0},33,Exclude
+132,monocyte_percentage_freezethaw_cycles_f30191_0_0,{0.0},33,Exclude
+140,nucleated_red_blood_cell_percentage_freezethaw_cycles_f30231_0_0,{0.0},33,Exclude
+98,haemoglobin_concentration_freezethaw_cycles_f30021_0_0,{0.0},33,Exclude
+110,platelet_count_freezethaw_cycles_f30081_0_0,{0.0},33,Exclude
+138,basophill_percentage_freezethaw_cycles_f30221_0_0,{0.0},33,Exclude
+136,eosinophill_percentage_freezethaw_cycles_f30211_0_0,{0.0},33,Exclude
+112,platelet_crit_freezethaw_cycles_f30091_0_0,{0.0},33,Exclude
+134,neutrophill_percentage_freezethaw_cycles_f30201_0_0,{0.0},33,Exclude
+114,mean_platelet_thrombocyte_volume_freezethaw_cycles_f30101_0_0,{0.0},33,Exclude
+142,reticulocyte_percentage_freezethaw_cycles_f30241_0_0,{0.0},33,Exclude
+130,lymphocyte_percentage_freezethaw_cycles_f30181_0_0,{0.0},33,Exclude
+116,platelet_distribution_width_freezethaw_cycles_f30111_0_0,{0.0},33,Exclude
+128,nucleated_red_blood_cell_count_freezethaw_cycles_f30171_0_0,{0.0},33,Exclude
+118,lymphocyte_count_freezethaw_cycles_f30121_0_0,{0.0},33,Exclude
+120,monocyte_count_freezethaw_cycles_f30131_0_0,{0.0},33,Exclude
+122,neutrophill_count_freezethaw_cycles_f30141_0_0,{0.0},33,Exclude
+124,eosinophill_count_freezethaw_cycles_f30151_0_0,{0.0},33,Exclude
+108,red_blood_cell_erythrocyte_distribution_width_freezethaw_cycles_f30071_0_0,{0.0},33,Exclude
+126,basophill_count_freezethaw_cycles_f30161_0_0,{0.0},33,Exclude
+150,immature_reticulocyte_fraction_freezethaw_cycles_f30281_0_0,{0.0},33,Exclude
+102,mean_corpuscular_volume_freezethaw_cycles_f30041_0_0,{0.0},33,Exclude
+100,haematocrit_freezethaw_cycles_f30031_0_0,{0.0},33,Exclude
+7,index_for_card_a_in_round_f401_0_5,{0.0},33,Exclude
+154,high_light_scatter_reticulocyte_count_freezethaw_cycles_f30301_0_0,{0.0},33,Exclude
+144,reticulocyte_count_freezethaw_cycles_f30251_0_0,{0.0},33,Exclude
+152,high_light_scatter_reticulocyte_percentage_freezethaw_cycles_f30291_0_0,{0.0},33,Exclude
+94,white_blood_cell_leukocyte_count_freezethaw_cycles_f30001_0_0,{0.0},33,Exclude
+96,red_blood_cell_erythrocyte_count_freezethaw_cycles_f30011_0_0,{0.0},33,Exclude
+14,index_for_card_b_in_round_f402_0_5,{0.0},33,Exclude
+148,mean_sphered_cell_volume_freezethaw_cycles_f30271_0_0,{0.0},33,Exclude
+146,mean_reticulocyte_volume_freezethaw_cycles_f30261_0_0,{0.0},33,Exclude
+106,mean_corpuscular_haemoglobin_concentration_freezethaw_cycles_f30061_0_0,{0.0},33,Exclude
+123,neutrophill_count_acquisition_route_f30144_0_0,"{'Backup', 'Archive'}",31,Exclude
+119,lymphocyte_count_acquisition_route_f30124_0_0,"{'Backup', 'Archive'}",31,Exclude
+95,white_blood_cell_leukocyte_count_acquisition_route_f30004_0_0,"{'Backup', 'Archive'}",31,Exclude
+121,monocyte_count_acquisition_route_f30134_0_0,"{'Backup', 'Archive'}",31,Exclude
+125,eosinophill_count_acquisition_route_f30154_0_0,"{'Backup', 'Archive'}",31,Exclude
+107,mean_corpuscular_haemoglobin_concentration_acquisition_route_f30064_0_0,"{'Backup', 'Archive'}",31,Exclude
+115,mean_platelet_thrombocyte_volume_acquisition_route_f30104_0_0,"{'Backup', 'Archive'}",31,Exclude
+99,haemoglobin_concentration_acquisition_route_f30024_0_0,"{'Backup', 'Archive'}",31,Exclude
+117,platelet_distribution_width_acquisition_route_f30114_0_0,"{'Backup', 'Archive'}",31,Exclude
+101,haematocrit_percentage_acquisition_route_f30034_0_0,"{'Backup', 'Archive'}",31,Exclude
+113,platelet_crit_acquisition_route_f30094_0_0,"{'Backup', 'Archive'}",31,Exclude
+103,mean_corpuscular_volume_acquisition_route_f30044_0_0,"{'Backup', 'Archive'}",31,Exclude
+111,platelet_count_acquisition_route_f30084_0_0,"{'Backup', 'Archive'}",31,Exclude
+105,mean_corpuscular_haemoglobin_acquisition_route_f30054_0_0,"{'Backup', 'Archive'}",31,Exclude
+109,red_blood_cell_erythrocyte_distribution_width_acquisition_route_f30074_0_0,"{'Backup', 'Archive'}",31,Exclude
+97,red_blood_cell_erythrocyte_count_acquisition_route_f30014_0_0,"{'Backup', 'Archive'}",31,Exclude
+141,nucleated_red_blood_cell_percentage_acquisition_route_f30234_0_0,"{'Backup', 'Archive'}",31,Exclude
+143,reticulocyte_percentage_acquisition_route_f30244_0_0,"{'Backup', 'Archive'}",31,Exclude
+131,lymphocyte_percentage_acquisition_route_f30184_0_0,"{'Backup', 'Archive'}",31,Exclude
+133,monocyte_percentage_acquisition_route_f30194_0_0,"{'Backup', 'Archive'}",31,Exclude
+135,neutrophill_percentage_acquisition_route_f30204_0_0,"{'Backup', 'Archive'}",31,Exclude
+137,eosinophill_percentage_acquisition_route_f30214_0_0,"{'Backup', 'Archive'}",31,Exclude
+139,basophill_percentage_acquisition_route_f30224_0_0,"{'Backup', 'Archive'}",31,Exclude
+127,basophill_count_acquisition_route_f30164_0_0,"{'Backup', 'Archive'}",31,Exclude
+129,nucleated_red_blood_cell_count_acquisition_route_f30174_0_0,"{'Backup', 'Archive'}",31,Exclude
+145,reticulocyte_count_acquisition_route_f30254_0_0,"{'Backup', 'Archive'}",31,Exclude
+147,mean_reticulocyte_volume_acquisition_route_f30264_0_0,"{'Backup', 'Archive'}",31,Exclude
+149,mean_sphered_cell_volume_acquisition_route_f30274_0_0,"{'Backup', 'Archive'}",31,Exclude
+151,immature_reticulocyte_fraction_acquisition_route_f30284_0_0,"{'Backup', 'Archive'}",31,Exclude
+153,high_light_scatter_reticulocyte_percentage_acquisition_route_f30294_0_0,"{'Backup', 'Archive'}",31,Exclude
+155,high_light_scatter_reticulocyte_count_acquisition_route_f30304_0_0,"{'Backup', 'Archive'}",31,Exclude
+50,worrier_anxious_feelings_f1980_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+74,fracturedbroken_bones_in_last_5_years_f2463_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+48,fedup_feelings_f1960_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+25,snoring_f1210_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+34,breastfed_as_a_baby_f1677_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+71,ever_had_bowel_cancer_screening_f2345_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+72,diabetes_diagnosed_by_doctor_f2443_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+39,adopted_as_a_child_f1767_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+70,chest_pain_or_discomfort_f2335_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+47,sensitivity_hurt_feelings_f1950_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+51,tense_highly_strung_f1990_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+52,worry_too_long_after_embarrassment_f2000_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+53,suffer_from_nerves_f2010_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+54,loneliness_isolation_f2020_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+55,guilty_feelings_f2030_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+56,risk_taking_f2040_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+69,wheeze_or_whistling_in_the_chest_in_last_year_f2316_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+58,seen_a_psychiatrist_for_nerves_anxiety_tension_or_depression_f2100_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+57,seen_doctor_gp_for_nerves_anxiety_tension_or_depression_f2090_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+46,irritability_f1940_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+61,longstanding_illness_disability_or_infirmity_f2188_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+45,miserableness_f1930_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+44,mood_swings_f1920_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+43,mother_still_alive_f1835_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+42,father_still_alive_f1797_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+66,hearing_difficultyproblems_with_background_noise_f2257_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+41,maternal_smoking_around_birth_f1787_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+40,part_of_a_multiple_birth_f1777_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+49,nervous_feelings_f1970_0_0,"{'Do not know', 'Yes', 'No'}",29,"{'Do not know':1, 'Yes':2, 'No':0}"
+166,aspartate_aminotransferase_correction_level_f30653_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+156,albumin_correction_level_f30603_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+158,alkaline_phosphatase_correction_level_f30613_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+160,alanine_aminotransferase_correction_level_f30623_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+162,apolipoprotein_a_correction_level_f30633_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+172,cholesterol_correction_level_f30693_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+186,hdl_cholesterol_correction_level_f30763_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+164,apolipoprotein_b_correction_level_f30643_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+188,igf1_correction_level_f30773_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+190,ldl_direct_correction_level_f30783_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+192,phosphate_correction_level_f30813_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+178,cystatin_c_correction_level_f30723_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+194,shbg_correction_level_f30833_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+196,total_bilirubin_correction_level_f30843_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+198,testosterone_correction_level_f30853_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+174,creatinine_correction_level_f30703_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+200,total_protein_correction_level_f30863_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+182,glucose_correction_level_f30743_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+170,calcium_correction_level_f30683_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+168,urea_correction_level_f30673_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+204,urate_correction_level_f30883_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+202,triglycerides_correction_level_f30873_0_0,"{'Date and aliquot correction', 'Date correction only'}",22,Exclude
+201,total_protein_correction_reason_f30864_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+165,apolipoprotein_b_correction_reason_f30644_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+187,hdl_cholesterol_correction_reason_f30764_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+161,alanine_aminotransferase_correction_reason_f30624_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+189,igf1_correction_reason_f30774_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+159,alkaline_phosphatase_correction_reason_f30614_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+191,ldl_direct_correction_reason_f30784_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+193,phosphate_correction_reason_f30814_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+205,urate_correction_reason_f30884_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+195,shbg_correction_reason_f30834_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+197,total_bilirubin_correction_reason_f30844_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+203,triglycerides_correction_reason_f30874_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+183,glucose_correction_reason_f30744_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+199,testosterone_correction_reason_f30854_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+163,apolipoprotein_a_correction_reason_f30634_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+169,urea_correction_reason_f30674_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+173,cholesterol_correction_reason_f30694_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+175,creatinine_correction_reason_f30704_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+179,cystatin_c_correction_reason_f30724_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+167,aspartate_aminotransferase_correction_reason_f30654_0_0,"{'No aliquot information', 'Normal for assay type'}",20,Exclude
+93,close_to_major_road_f24014_0_0,"{'Yes', 'No'}",11,"{'Yes':1, 'No':0}"
+81,ever_smoked_f20160_0_0,"{'Yes', 'No'}",11,"{'Yes':1, 'No':0}"
+92,above_moderatevigorouswalking_recommendation_f22036_0_0,"{'Yes', 'No'}",11,"{'Yes':1, 'No':0}"
+78,pacemaker_f3079_0_0,"{'Yes', 'No'}",11,"{'Yes':1, 'No':0}"
+88,use_in_phasing_chromosome_x_f22029_0_0,"{'Yes', 'No'}",11,"{'Yes':1, 'No':0}"
+89,use_in_phasing_chromosome_xy_f22030_0_0,"{'Yes', 'No'}",11,"{'Yes':1, 'No':0}"
+63,other_eye_problems_f2227_0_0,"{'Yes', 'No'}",11,"{'Yes':1, 'No':0}"
+62,wears_glasses_or_contact_lenses_f2207_0_0,"{'Yes', 'No'}",11,"{'Yes':1, 'No':0}"
+60,ever_had_samesex_intercourse_f2159_0_0,"{'Yes', 'No'}",11,"{'Yes':1, 'No':0}"
+91,above_moderatevigorous_recommendation_f22035_0_0,"{'Yes', 'No'}",11,"{'Yes':1, 'No':0}"
+87,use_in_phasing_chromosomes_122_f22028_0_0,"{'Yes', 'No'}",11,"{'Yes':1, 'No':0}"
+5,number_of_rows_displayed_in_round_f397_0_2,{3.0},4,Exclude
+207,vitamin_d_correction_reason_f30894_0_0,{'Normal for assay type'},4,Exclude
+9,index_for_card_a_in_round_f401_0_7,{3.0},4,Exclude
+2,number_of_columns_displayed_in_round_f396_0_1,{3.0},4,Exclude
+185,glycated_haemoglobin_hba1c_correction_reason_f30754_0_0,{'Normal for assay type'},4,Exclude
+177,creactive_protein_correction_reason_f30714_0_0,{'Normal for assay type'},4,Exclude
+181,gamma_glutamyltransferase_correction_reason_f30734_0_0,{'Normal for assay type'},4,Exclude
+16,index_for_card_b_in_round_f402_0_7,{3.0},4,Exclude
+12,index_for_card_a_in_round_f401_0_10,{2.0},3,Exclude
+19,index_for_card_b_in_round_f402_0_10,{2.0},3,Exclude
+76,taking_other_prescription_medications_f2492_0_0,"{'Do not know', 'Yes - you will be asked about this later by an interviewer', 'No'}",3,"{'Do not know':1, 'Yes - you will be asked about this later by an interviewer':2, 'No':0}"
+206,vitamin_d_correction_level_f30893_0_0,{'None'},3,Exclude
+75,other_serious_medical_conditiondisability_diagnosed_by_doctor_f2473_0_0,"{'Do not know', 'Yes - you will be asked about this later by an interviewer', 'No'}",3,"{'Do not know':1, 'Yes - you will be asked about this later by an interviewer':2, 'No':0}"
+73,cancer_diagnosed_by_doctor_f2453_0_0,"{'Do not know', 'Yes - you will be asked about this later by an interviewer', 'No'}",3,"{'Do not know':1, 'Yes - you will be asked about this later by an interviewer':2, 'No':0}"
+4,number_of_rows_displayed_in_round_f397_0_1,{2.0},3,Exclude
+176,creactive_protein_correction_level_f30713_0_0,{'None'},3,Exclude
+180,gamma_glutamyltransferase_correction_level_f30733_0_0,{'None'},3,Exclude
+171,calcium_correction_reason_f30684_0_0,"{'Original log assay result more than 15 SDs below mean of log results in manual aliquots', 'No aliquot information', 'Normal for assay type'}",2,Exclude
+0,sex_f31_0_0,"{'Female', 'Male'}",2,"{'Female':1, 'Male':0}"
+157,albumin_correction_reason_f30604_0_0,"{'Original log assay result more than 15 SDs below mean of log results in manual aliquots', 'No aliquot information', 'Normal for assay type'}",2,Exclude
+80,alcohol_drinker_status_f20117_0_0,"{'Never', 'Current', 'Previous'}",2,"{'Never':0, 'Current':2, 'Previous':1}"
+24,sleeplessness_insomnia_f1200_0_0,"{'Sometimes', 'Usually', 'Never/rarely'}",2,"{'Sometimes':1, 'Usually':2, 'Never/rarely':0,'Always':3}"
+23,nap_during_day_f1190_0_0,"{'Sometimes', 'Usually', 'Never/rarely'}",2,"{'Sometimes':1, 'Usually':2, 'Never/rarely':0,'Always':3}"
+20,index_for_card_b_in_round_f402_0_11,{5.0},2,Exclude
+13,index_for_card_a_in_round_f401_0_11,{5.0},2,Exclude
+79,smoking_status_f20116_0_0,"{'Never', 'Current', 'Previous'}",2,"{'Never':0, 'Current':2, 'Previous':1}"
+15,index_for_card_b_in_round_f402_0_6,{4.0},2,Exclude
+82,genetic_sex_f22001_0_0,"{'Female', 'Male'}",2,Exclude
+3,number_of_columns_displayed_in_round_f396_0_2,{4.0},2,Exclude
+11,index_for_card_a_in_round_f401_0_9,{7.0},1,Exclude
+10,index_for_card_a_in_round_f401_0_8,{6.0},1,Exclude
+30,hot_drink_temperature_f1518_0_0,"{'Hot', 'Do not drink hot drinks', 'Very hot', 'Warm'}",1,"{'Hot':2, 'Do not drink hot drinks':0, 'Very hot':3, 'Warm':1}"
+17,index_for_card_b_in_round_f402_0_8,{9.0},1,Exclude
+18,index_for_card_b_in_round_f402_0_9,{8.0},1,Exclude
+8,index_for_card_a_in_round_f401_0_6,{1.0},1,Exclude
+21,usual_walking_pace_f924_0_0,"{'Slow pace', 'Brisk pace', 'Steady average pace', 'None of the above'}",1,"{'Slow pace':0, 'Brisk pace':2, 'Steady average pace':1, 'None of the above':1}"
+22,usual_side_of_head_for_mobile_phone_use_f1150_0_0,"{'Do not know', 'Equally left and right', 'Right', 'Left'}",1,ohe
+6,number_of_correct_matches_in_round_f398_0_1,"{0.0, 1.0, 2.0, 3.0}",1,
+26,current_tobacco_smoking_f1239_0_0,"{'Only occasionally', 'Yes, on most or all days', 'No'}",1,"{'Only occasionally':1, 'Yes, on most or all days':2, 'No':0}"
+27,past_tobacco_smoking_f1249_0_0,"{'Just tried once or twice', 'Smoked occasionally', 'I have never smoked', 'Smoked on most or all days'}",1,"{'Just tried once or twice':1, 'Smoked occasionally':2, 'I have never smoked':0, 'Smoked on most or all days':3}"
+28,smokingsmokers_in_household_f1259_0_0,"{'Yes, one household member smokes', 'No', 'Yes, more than one household member smokes'}",1,"{'Yes, one household member smokes':1, 'No':0, 'Yes, more than one household member smokes':2}"
+29,salt_added_to_food_f1478_0_0,"{'Always', 'Sometimes', 'Usually', 'Never/rarely'}",1,"{'Sometimes':1, 'Usually':2, 'Never/rarely':0,'Always':3}"
+32,variation_in_diet_f1548_0_0,"{'Do not know', 'Sometimes', 'Never/rarely', 'Often'}",1,ohe
+31,major_dietary_changes_in_the_last_5_years_f1538_0_0,"{'Yes, because of illness', 'Yes, because of other reasons', 'No'}",1,ohe
+1,birth_weight_known_f120_0_0,"{'Yes - pounds and ounces', 'Yes - Kilograms', 'No'}",1,"{'Yes - pounds and ounces':1, 'Yes - Kilograms':1, 'No':0}"
+90,ipaq_activity_group_f22032_0_0,"{'low', 'moderate', 'high'}",1,"{'low':0, 'moderate':1, 'high':2}"
+86,genetic_kinship_to_other_participants_f22021_0_0,"{'Ten or more third-degree relatives identified', 'No kinship found', 'At least one relative identified', 'Participant excluded from kinship inference process'}",1,ohe
+85,used_in_genetic_principal_components_f22020_0_0,{'Yes'},1,Exclude
+84,genetic_ethnic_grouping_f22006_0_0,{'Caucasian'},1,{'Caucasian':1}
+83,cel_files_f22002_0_0,{'22002_0_0'},1,Exclude
+77,seating_box_height_f3077_0_0,"{'40cm', '30cm', '50cm'}",1,Exclude
+68,weight_change_compared_with_1_year_ago_f2306_0_0,"{'Do not know', 'No - weigh about the same', 'Yes - lost weight', 'Yes - gained weight'}",1,"{'Do not know':1, 'No - weigh about the same':1, 'Yes - lost weight':0, 'Yes - gained weight':2}"
+67,falls_in_the_last_year_f2296_0_0,"{'No falls', 'Only one fall', 'More than one fall'}",1,"{'No falls':0, 'Only one fall':1, 'More than one fall':2}"
+65,hearing_difficultyproblems_f2247_0_0,"{'Do not know', 'Yes', 'No', 'I am completely deaf'}",1,"{'Do not know':0, 'Yes':1, 'No':0, 'I am completely deaf':2}"
+64,plays_computer_games_f2237_0_0,"{'Sometimes', 'Never/rarely', 'Often'}",1,"{'Sometimes':1, 'Usually':2, 'Never/rarely':0,'Always':3}"
+59,answered_sexual_history_questions_f2129_0_0,"{'Continue', 'Skip this section'}",1,Exclude
+38,facial_ageing_f1757_0_0,"{'Younger than you are', 'Do not know', 'Older than you are', 'About your age'}",1,"{'Younger than you are':0, 'Do not know':1, 'Older than you are':2, 'About your age':1}"
+37,handedness_chiralitylaterality_f1707_0_0,"{'Use both right and left hands equally', 'Left-handed', 'Right-handed'}",1,ohe
+36,comparative_height_size_at_age_10_f1697_0_0,"{'Do not know', 'Taller', 'About average', 'Shorter'}",1,"{'Do not know':1, 'Taller':2, 'About average':1, 'Shorter':0}"
+184,glycated_haemoglobin_hba1c_correction_level_f30753_0_0,{'Date correction only'},1,Exclude
+35,comparative_body_size_at_age_10_f1687_0_0,"{'Do not know', 'About average', 'Thinner', 'Plumper'}",1,"{'Do not know':1, 'About average':1, 'Thinner':0, 'Plumper':2}"
+33,alcohol_intake_versus_10_years_previously_f1628_0_0,"{'More nowadays', 'Do not know', 'Less nowadays', 'About the same'}",1,"{'More nowadays':2, 'Do not know':1, 'Less nowadays':0, 'About the same':1}"
+208,inpatient_record_origin_f40022_0_0,"{'HES', 'PEDW', 'SMR'}",1,ohe
+,lambmutton_intake_f1379_0_0,"{'Once or more daily', 'Less than once a week', 'Never', 'Do not know', 'Once a week', '5-6 times a week', '2-4 times a week'}",8,"{'Once or more daily':7, 'Less than once a week':0.5, 'Never':0,  'Once a week':1, '5-6 times a week':5.5, '2-4 times a week':3}"
+,oily_fish_intake_f1329_0_0,"{'Once or more daily', 'Less than once a week', 'Never', 'Do not know', 'Once a week', '5-6 times a week', '2-4 times a week'}",8,"{'Once or more daily':7, 'Less than once a week':0.5, 'Never':0,  'Once a week':1, '5-6 times a week':5.5, '2-4 times a week':3}"
+,nonoily_fish_intake_f1339_0_0,"{'Once or more daily', 'Less than once a week', 'Never', 'Do not know', 'Once a week', '5-6 times a week', '2-4 times a week'}",8,"{'Once or more daily':7, 'Less than once a week':0.5, 'Never':0,  'Once a week':1, '5-6 times a week':5.5, '2-4 times a week':3}"
+,poultry_intake_f1359_0_0,"{'Once or more daily', 'Less than once a week', 'Never', 'Do not know', 'Once a week', '5-6 times a week', '2-4 times a week'}",8,"{'Once or more daily':7, 'Less than once a week':0.5, 'Never':0,  'Once a week':1, '5-6 times a week':5.5, '2-4 times a week':3}"
+,beef_intake_f1369_0_0,"{'Once or more daily', 'Less than once a week', 'Never', 'Do not know', 'Once a week', '5-6 times a week', '2-4 times a week'}",8,"{'Once or more daily':7, 'Less than once a week':0.5, 'Never':0,  'Once a week':1, '5-6 times a week':5.5, '2-4 times a week':3}"
+,processed_meat_intake_f1349_0_0,"{'Once or more daily', 'Less than once a week', 'Never', 'Do not know', 'Once a week', '5-6 times a week', '2-4 times a week'}",8,"{'Once or more daily':7, 'Less than once a week':0.5, 'Never':0,  'Once a week':1, '5-6 times a week':5.5, '2-4 times a week':3}"
+,pork_intake_f1389_0_0,"{'Once or more daily', 'Less than once a week', 'Never', 'Do not know', 'Once a week', '5-6 times a week', '2-4 times a week'}",8,"{'Once or more daily':7, 'Less than once a week':0.5, 'Never':0,  'Once a week':1, '5-6 times a week':5.5, '2-4 times a week':3}"
+,cheese_intake_f1408_0_0,"{'Once or more daily', 'Less than once a week', 'Never', 'Do not know', 'Once a week', '5-6 times a week', '2-4 times a week'}",8,"{'Once or more daily':7, 'Less than once a week':0.5, 'Never':0,  'Once a week':1, '5-6 times a week':5.5, '2-4 times a week':3}"
+,frequency_of_tiredness_lethargy_in_last_2_weeks_f2080_0_0,"{'Not at all', 'Several days', 'Do not know', 'More than half the days', 'Nearly every day'}",4,"{'Not at all':0, 'Several days':1, 'More than half the days':2, 'Nearly every day':3}"
+,frequency_of_tenseness_restlessness_in_last_2_weeks_f2070_0_0,"{'Not at all', 'Several days', 'Do not know', 'More than half the days', 'Nearly every day'}",4,"{'Not at all':0, 'Several days':1, 'More than half the days':2, 'Nearly every day':3}"
+,frequency_of_unenthusiasm_disinterest_in_last_2_weeks_f2060_0_0,"{'Not at all', 'Several days', 'Do not know', 'More than half the days', 'Nearly every day'}",4,"{'Not at all':0, 'Several days':1, 'More than half the days':2, 'Nearly every day':3}"
+,frequency_of_depressed_mood_in_last_2_weeks_f2050_0_0,"{'Not at all', 'Several days', 'Do not know', 'More than half the days', 'Nearly every day'}",4,"{'Not at all':0, 'Several days':1, 'More than half the days':2, 'Nearly every day':3}"
+,handsfree_devicespeakerphone_use_with_mobile_phone_in_last_3_month_f1130_0_0,"{'Never or almost never', 'Less than half the time', 'Always or almost always', 'Do not know', 'More than half the time', 'About half the time'}",1,"{'Never or almost never':0, 'Less than half the time':1, 'Always or almost always':4,  'More than half the time':3, 'About half the time':2}"
+,getting_up_in_morning_f1170_0_0,"{'Do not know', 'Fairly easy', 'Not very easy', 'Very easy', 'Not at all easy'}",1,"{ 'Fairly easy':2, 'Not very easy':1, 'Very easy':3, 'Not at all easy':0}"
+,daytime_dozing_sleeping_narcolepsy_f1220_0_0,"{'Often', 'All of the time', 'Never/rarely', 'Do not know', 'Sometimes'}",1,"{'Often':2, 'All of the time':3, 'Never/rarely':0, 'Sometimes':1}"
+,difference_in_mobile_phone_use_compared_to_two_years_previously_f1140_0_0,"{""I didn't use a mobile phone two years ago"", 'Yes, use is now less frequent', 'Do not know', 'Yes, use is now more frequent', 'No'}",1,"{ 'Yes, use is now less frequent':0,  'Yes, use is now more frequent':2, 'No':1}"
+,weekly_usage_of_mobile_phone_in_last_3_months_f1120_0_0,"{'1-3 hours', '30-59 mins', 'Less than 5mins', 'More than 6 hours', '4-6 hours', 'Do not know', '5-29 mins'}",1,"{'1-3 hours':2, '30-59 mins':0.75, 'Less than 5mins':0.1, 'More than 6 hours':6, '4-6 hours':5,  '5-29 mins':0.3}"
+,length_of_mobile_phone_use_f1110_0_0,"{'Two to four years', 'More than eight years', 'One year or less', 'Do not know', 'Five to eight years', 'Never used mobile phone at least once per week'}",1,"{'Two to four years':2, 'More than eight years':4, 'One year or less':1,  'Five to eight years':3, 'Never used mobile phone at least once per week':0}"
+,average_total_household_income_before_tax_f738_0_0,"{'Less than 18,000', '52,000 to 100,000', 'Greater than 100,000', '18,000 to 30,999', '31,000 to 51,999', 'Do not know'}",1,"{'Less than 18,000':18, '52,000 to 100,000':76, 'Greater than 100,000':100, '18,000 to 30,999':24.5, '31,000 to 51,999':40.5}"
+,frequency_of_stair_climbing_in_last_4_weeks_f943_0_0,"{'None', 'Do not know', '1-5 times a day', '11-15 times a day', '16-20 times a day', 'More than 20 times a day', '6-10 times a day'}",1,"{'None':0,  '1-5 times a day':3, '11-15 times a day':13, '16-20 times a day':18, 'More than 20 times a day':20, '6-10 times a day':8}"
+,frequency_of_friendfamily_visits_f1031_0_0,"{'Never or almost never', 'Do not know', 'Once every few months', 'No friends/family outside household', 'Almost daily', 'About once a week', 'About once a month', '2-4 times a week'}",1,"{'Never or almost never':1, 'Once every few months':2, 'No friends/family outside household':0, 'Almost daily':6, 'About once a week':4, 'About once a month':3, '2-4 times a week':5}"
+,drive_faster_than_motorway_speed_limit_f1100_0_0,"{'Often', 'Most of the time', 'Never/rarely', 'Do not know', 'Sometimes', 'Do not drive on the motorway'}",1,"{'Often':3, 'Most of the time':4, 'Never/rarely':1,  'Sometimes':2, 'Do not drive on the motorway':0}"
+,able_to_confide_f2110_0_0,"{'Never or almost never', 'Do not know', 'Once every few months', 'Almost daily', 'About once a week', 'About once a month', '2-4 times a week'}",1,"{'Never or almost never':0,  'Once every few months':1, 'Almost daily':5, 'About once a week':3, 'About once a month':2, '2-4 times a week':4}"
+,overall_health_rating_f2178_0_0,"{'Good', 'Fair', 'Do not know', 'Excellent', 'Poor'}",1,"{'Good':2, 'Fair':1,  'Excellent':3, 'Poor':0}"
+,use_of_sunuv_protection_f2267_0_0,"{'Most of the time', 'Never/rarely', 'Do not know', 'Do not go out in sunshine', 'Sometimes', 'Always'}",1,"{'Most of the time':2, 'Never/rarely':0,  'Sometimes':1, 'Always':3}"
